@@ -1,0 +1,11 @@
+JAVA := /usr/bin/java
+antlr := lib/antlr-4.9-complete.jar
+
+grammar:
+	$(JAVA) -jar $(antlr) -Dlanguage=Go -o . parser/NupLexer.g4
+	$(JAVA) -jar $(antlr) -Dlanguage=Go -o . parser/NupParser.g4
+
+grammar-test:
+	$(JAVA) -jar $(antlr) -o dist/java Nup.g4
+	javac dist/java/Nup*.java
+	cd dist/java && $(JAVA) -Xmx500M -cp ../$(antlr) org.antlr.v4.gui .TestRig Nup document -gui
