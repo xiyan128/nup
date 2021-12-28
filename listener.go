@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/sha1"
-	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"hash"
 	"io"
@@ -113,27 +112,23 @@ func (s *NupListener) ExitDocument(ctx *parser.DocumentContext) {
 
 // EnterBlock is called when production block is entered.
 func (s *NupListener) EnterBlock(ctx *parser.BlockContext) {
-	// if the outer command is a block, or it is the outermost command, the inner command is by default a paragraph
-	if s.GetCurrentCommand() == "" && ((s.env.parent != nil && IsBlock(s.env.parent.command)) || s.env.parent == nil) {
-		s.env.command = "para"
-	}
 
-	// if a block is not inside a command, it is a paragraph block
+	// if the outer command is a block, or it is the outermost command, the inner command is implicitly a paragraph
 	cmd := s.GetCurrentCommand()
-	open, _ := GetHtmlTags(cmd, s.env.vars)
-	_, err := s.documentWriter.WriteString(open)
-	if err != nil {
-		return
+	if (IsBlock(cmd) && cmd != "para") || (cmd == "" && s.env.parent == nil) {
+		s.pushEnv(map[string]interface{}{"_implicit_para": true}, "para")
+	}
+	if s.env.vars["_implicit_para"] != nil {
+		s.writeHTMLOpenTag()
 	}
 }
 
 // ExitBlock is called when production block is exited.
 func (s *NupListener) ExitBlock(ctx *parser.BlockContext) {
-	cmd := s.GetCurrentCommand()
-	_, closeTag := GetHtmlTags(cmd, s.env.vars)
-	_, err := s.documentWriter.WriteString(closeTag)
-	if err != nil {
-		return
+	if s.env.vars["_implicit_para"] != nil {
+		//s.env = s.env.parent
+		s.writeHTMLCloseTag()
+		s.popEnv()
 	}
 }
 
@@ -145,14 +140,6 @@ func (s *NupListener) ExitContent(ctx *parser.ContentContext) {}
 
 // EnterText is called when production text is entered.
 func (s *NupListener) EnterText(ctx *parser.TextContext) {
-	cmd := s.GetCurrentCommand()
-	if IsMath(cmd) {
-		openTag, _ := GetHtmlTags(cmd, s.env.vars)
-		_, err := s.documentWriter.WriteString(openTag)
-		if err != nil {
-			return
-		}
-	}
 	_, err := s.documentWriter.WriteString(ctx.GetText())
 	if err != nil {
 		return
@@ -161,14 +148,6 @@ func (s *NupListener) EnterText(ctx *parser.TextContext) {
 
 // ExitText is called when production text is exited.
 func (s *NupListener) ExitText(ctx *parser.TextContext) {
-	cmd := s.GetCurrentCommand()
-	if IsMath(cmd) {
-		_, closeTag := GetHtmlTags(cmd, s.env.vars)
-		_, err := s.documentWriter.WriteString(closeTag)
-		if err != nil {
-			return
-		}
-	}
 }
 
 // EnterIdentifier is called when production identifier is entered.
@@ -182,7 +161,6 @@ func (s *NupListener) EnterCommand(ctx *parser.CommandContext) {
 
 	// parse and check the command
 	cmd := ctx.GetCmd().GetText()
-	println(cmd)
 	validAttrs, ok := Attrs(cmd)
 	if !ok {
 		panic("Wrong command")
@@ -228,13 +206,42 @@ func (s *NupListener) EnterCommand(ctx *parser.CommandContext) {
 		}
 	}
 
+	s.pushEnv(attrsMap, cmd)
+	s.writeHTMLOpenTag()
+}
+
+func (s *NupListener) pushEnv(attrsMap map[string]interface{}, cmd string) {
 	s.env = &environment{parent: s.env, vars: attrsMap, command: cmd}
-	fmt.Printf("%v", s.env)
 }
 
 // ExitCommand is called when production command is exited.
 func (s *NupListener) ExitCommand(ctx *parser.CommandContext) {
+	s.writeHTMLCloseTag()
+	// pop the environment
+	s.popEnv()
+}
+
+func (s *NupListener) popEnv() {
 	s.env = s.env.parent
+}
+
+func (s *NupListener) writeHTMLTag(tag bool) {
+	cmd := s.GetCurrentCommand()
+	openTag, closeTag := GetHtmlTags(cmd, s.env.vars)
+	if tag {
+		_, _ = s.documentWriter.WriteString(openTag)
+	} else {
+
+		_, _ = s.documentWriter.WriteString(closeTag)
+	}
+}
+
+func (s *NupListener) writeHTMLOpenTag() {
+	s.writeHTMLTag(true)
+}
+
+func (s *NupListener) writeHTMLCloseTag() {
+	s.writeHTMLTag(false)
 }
 
 // EnterVal is called when production val is entered.

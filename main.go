@@ -10,11 +10,24 @@ import (
 func main() {
 	is := antlr.NewInputStream(
 		`
-\bf{this is the start of a new chapter}
+\bf[id="first"]{this is the start of a new chapter}
 
 Let's write some latex: $x^2 + y^2 = z^2$.
 
-\quote{This is really cool, \it{isn't it?}}
+\quote[cite="https://google.com"]{
+This is really cool, \it{isn't it?}
+
+This is a second paragraph in the quote, 
+and this is not a new paragraph.
+
+This, however, is a new paragraph.
+}
+
+\para{a para}
+
+\para{another para}
+
+nea \para{dsa}
 `)
 	lexer := parser.NewNupLexer(is)
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
