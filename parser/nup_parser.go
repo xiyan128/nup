@@ -16,7 +16,7 @@ var _ = reflect.Copy
 var _ = strconv.Itoa
 
 var parserATN = []uint16{
-	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 17, 106,
+	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 22, 120,
 	4, 2, 9, 2, 4, 3, 9, 3, 4, 4, 9, 4, 4, 5, 9, 5, 4, 6, 9, 6, 4, 7, 9, 7,
 	4, 8, 9, 8, 4, 9, 9, 9, 4, 10, 9, 10, 4, 11, 9, 11, 4, 12, 9, 12, 3, 2,
 	3, 2, 3, 3, 3, 3, 6, 3, 29, 10, 3, 13, 3, 14, 3, 30, 3, 4, 7, 4, 34, 10,
@@ -24,49 +24,57 @@ var parserATN = []uint16{
 	4, 14, 4, 46, 11, 4, 3, 4, 5, 4, 49, 10, 4, 3, 5, 3, 5, 5, 5, 53, 10, 5,
 	3, 5, 5, 5, 56, 10, 5, 6, 5, 58, 10, 5, 13, 5, 14, 5, 59, 3, 6, 3, 6, 5,
 	6, 64, 10, 6, 3, 7, 3, 7, 3, 8, 6, 8, 69, 10, 8, 13, 8, 14, 8, 70, 3, 9,
-	3, 9, 3, 9, 5, 9, 76, 10, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 10, 3, 10, 3, 11,
-	3, 11, 3, 11, 3, 11, 3, 12, 3, 12, 3, 12, 3, 12, 3, 12, 3, 12, 3, 12, 3,
-	12, 7, 12, 96, 10, 12, 12, 12, 14, 12, 99, 11, 12, 5, 12, 101, 10, 12,
-	3, 12, 5, 12, 104, 10, 12, 3, 12, 2, 2, 13, 2, 4, 6, 8, 10, 12, 14, 16,
-	18, 20, 22, 2, 3, 3, 2, 14, 16, 2, 107, 2, 24, 3, 2, 2, 2, 4, 26, 3, 2,
-	2, 2, 6, 35, 3, 2, 2, 2, 8, 57, 3, 2, 2, 2, 10, 63, 3, 2, 2, 2, 12, 65,
-	3, 2, 2, 2, 14, 68, 3, 2, 2, 2, 16, 72, 3, 2, 2, 2, 18, 81, 3, 2, 2, 2,
-	20, 83, 3, 2, 2, 2, 22, 103, 3, 2, 2, 2, 24, 25, 7, 4, 2, 2, 25, 3, 3,
-	2, 2, 2, 26, 28, 5, 2, 2, 2, 27, 29, 5, 2, 2, 2, 28, 27, 3, 2, 2, 2, 29,
-	30, 3, 2, 2, 2, 30, 28, 3, 2, 2, 2, 30, 31, 3, 2, 2, 2, 31, 5, 3, 2, 2,
-	2, 32, 34, 5, 2, 2, 2, 33, 32, 3, 2, 2, 2, 34, 37, 3, 2, 2, 2, 35, 33,
-	3, 2, 2, 2, 35, 36, 3, 2, 2, 2, 36, 38, 3, 2, 2, 2, 37, 35, 3, 2, 2, 2,
-	38, 44, 5, 8, 5, 2, 39, 40, 5, 4, 3, 2, 40, 41, 5, 8, 5, 2, 41, 43, 3,
-	2, 2, 2, 42, 39, 3, 2, 2, 2, 43, 46, 3, 2, 2, 2, 44, 42, 3, 2, 2, 2, 44,
-	45, 3, 2, 2, 2, 45, 48, 3, 2, 2, 2, 46, 44, 3, 2, 2, 2, 47, 49, 5, 4, 3,
-	2, 48, 47, 3, 2, 2, 2, 48, 49, 3, 2, 2, 2, 49, 7, 3, 2, 2, 2, 50, 52, 5,
-	10, 6, 2, 51, 53, 5, 2, 2, 2, 52, 51, 3, 2, 2, 2, 52, 53, 3, 2, 2, 2, 53,
-	55, 3, 2, 2, 2, 54, 56, 5, 10, 6, 2, 55, 54, 3, 2, 2, 2, 55, 56, 3, 2,
-	2, 2, 56, 58, 3, 2, 2, 2, 57, 50, 3, 2, 2, 2, 58, 59, 3, 2, 2, 2, 59, 57,
-	3, 2, 2, 2, 59, 60, 3, 2, 2, 2, 60, 9, 3, 2, 2, 2, 61, 64, 5, 16, 9, 2,
-	62, 64, 5, 12, 7, 2, 63, 61, 3, 2, 2, 2, 63, 62, 3, 2, 2, 2, 64, 11, 3,
-	2, 2, 2, 65, 66, 7, 5, 2, 2, 66, 13, 3, 2, 2, 2, 67, 69, 7, 17, 2, 2, 68,
-	67, 3, 2, 2, 2, 69, 70, 3, 2, 2, 2, 70, 68, 3, 2, 2, 2, 70, 71, 3, 2, 2,
-	2, 71, 15, 3, 2, 2, 2, 72, 73, 7, 3, 2, 2, 73, 75, 5, 14, 8, 2, 74, 76,
-	5, 22, 12, 2, 75, 74, 3, 2, 2, 2, 75, 76, 3, 2, 2, 2, 76, 77, 3, 2, 2,
-	2, 77, 78, 7, 13, 2, 2, 78, 79, 5, 8, 5, 2, 79, 80, 7, 6, 2, 2, 80, 17,
-	3, 2, 2, 2, 81, 82, 9, 2, 2, 2, 82, 19, 3, 2, 2, 2, 83, 84, 5, 14, 8, 2,
-	84, 85, 7, 11, 2, 2, 85, 86, 5, 18, 10, 2, 86, 21, 3, 2, 2, 2, 87, 88,
-	7, 9, 2, 2, 88, 89, 5, 18, 10, 2, 89, 90, 7, 10, 2, 2, 90, 104, 3, 2, 2,
-	2, 91, 100, 7, 9, 2, 2, 92, 97, 5, 20, 11, 2, 93, 94, 7, 7, 2, 2, 94, 96,
-	5, 20, 11, 2, 95, 93, 3, 2, 2, 2, 96, 99, 3, 2, 2, 2, 97, 95, 3, 2, 2,
-	2, 97, 98, 3, 2, 2, 2, 98, 101, 3, 2, 2, 2, 99, 97, 3, 2, 2, 2, 100, 92,
-	3, 2, 2, 2, 100, 101, 3, 2, 2, 2, 101, 102, 3, 2, 2, 2, 102, 104, 7, 10,
-	2, 2, 103, 87, 3, 2, 2, 2, 103, 91, 3, 2, 2, 2, 104, 23, 3, 2, 2, 2, 15,
-	30, 35, 44, 48, 52, 55, 59, 63, 70, 75, 97, 100, 103,
+	3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 6, 9, 83, 10, 9,
+	13, 9, 14, 9, 84, 3, 9, 5, 9, 88, 10, 9, 3, 9, 3, 9, 3, 9, 3, 9, 5, 9,
+	94, 10, 9, 3, 10, 3, 10, 3, 11, 3, 11, 3, 11, 3, 11, 3, 12, 3, 12, 3, 12,
+	3, 12, 3, 12, 3, 12, 3, 12, 3, 12, 7, 12, 110, 10, 12, 12, 12, 14, 12,
+	113, 11, 12, 5, 12, 115, 10, 12, 3, 12, 5, 12, 118, 10, 12, 3, 12, 2, 2,
+	13, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 2, 4, 4, 2, 7, 7, 22, 22, 3,
+	2, 16, 18, 2, 124, 2, 24, 3, 2, 2, 2, 4, 26, 3, 2, 2, 2, 6, 35, 3, 2, 2,
+	2, 8, 57, 3, 2, 2, 2, 10, 63, 3, 2, 2, 2, 12, 65, 3, 2, 2, 2, 14, 68, 3,
+	2, 2, 2, 16, 93, 3, 2, 2, 2, 18, 95, 3, 2, 2, 2, 20, 97, 3, 2, 2, 2, 22,
+	117, 3, 2, 2, 2, 24, 25, 7, 4, 2, 2, 25, 3, 3, 2, 2, 2, 26, 28, 5, 2, 2,
+	2, 27, 29, 5, 2, 2, 2, 28, 27, 3, 2, 2, 2, 29, 30, 3, 2, 2, 2, 30, 28,
+	3, 2, 2, 2, 30, 31, 3, 2, 2, 2, 31, 5, 3, 2, 2, 2, 32, 34, 5, 2, 2, 2,
+	33, 32, 3, 2, 2, 2, 34, 37, 3, 2, 2, 2, 35, 33, 3, 2, 2, 2, 35, 36, 3,
+	2, 2, 2, 36, 38, 3, 2, 2, 2, 37, 35, 3, 2, 2, 2, 38, 44, 5, 8, 5, 2, 39,
+	40, 5, 4, 3, 2, 40, 41, 5, 8, 5, 2, 41, 43, 3, 2, 2, 2, 42, 39, 3, 2, 2,
+	2, 43, 46, 3, 2, 2, 2, 44, 42, 3, 2, 2, 2, 44, 45, 3, 2, 2, 2, 45, 48,
+	3, 2, 2, 2, 46, 44, 3, 2, 2, 2, 47, 49, 5, 4, 3, 2, 48, 47, 3, 2, 2, 2,
+	48, 49, 3, 2, 2, 2, 49, 7, 3, 2, 2, 2, 50, 52, 5, 10, 6, 2, 51, 53, 5,
+	2, 2, 2, 52, 51, 3, 2, 2, 2, 52, 53, 3, 2, 2, 2, 53, 55, 3, 2, 2, 2, 54,
+	56, 5, 10, 6, 2, 55, 54, 3, 2, 2, 2, 55, 56, 3, 2, 2, 2, 56, 58, 3, 2,
+	2, 2, 57, 50, 3, 2, 2, 2, 58, 59, 3, 2, 2, 2, 59, 57, 3, 2, 2, 2, 59, 60,
+	3, 2, 2, 2, 60, 9, 3, 2, 2, 2, 61, 64, 5, 16, 9, 2, 62, 64, 5, 12, 7, 2,
+	63, 61, 3, 2, 2, 2, 63, 62, 3, 2, 2, 2, 64, 11, 3, 2, 2, 2, 65, 66, 9,
+	2, 2, 2, 66, 13, 3, 2, 2, 2, 67, 69, 7, 19, 2, 2, 68, 67, 3, 2, 2, 2, 69,
+	70, 3, 2, 2, 2, 70, 68, 3, 2, 2, 2, 70, 71, 3, 2, 2, 2, 71, 15, 3, 2, 2,
+	2, 72, 73, 7, 6, 2, 2, 73, 74, 5, 12, 7, 2, 74, 75, 7, 21, 2, 2, 75, 94,
+	3, 2, 2, 2, 76, 77, 7, 5, 2, 2, 77, 78, 5, 12, 7, 2, 78, 79, 7, 20, 2,
+	2, 79, 94, 3, 2, 2, 2, 80, 82, 7, 3, 2, 2, 81, 83, 7, 19, 2, 2, 82, 81,
+	3, 2, 2, 2, 83, 84, 3, 2, 2, 2, 84, 82, 3, 2, 2, 2, 84, 85, 3, 2, 2, 2,
+	85, 87, 3, 2, 2, 2, 86, 88, 5, 22, 12, 2, 87, 86, 3, 2, 2, 2, 87, 88, 3,
+	2, 2, 2, 88, 89, 3, 2, 2, 2, 89, 90, 7, 15, 2, 2, 90, 91, 5, 8, 5, 2, 91,
+	92, 7, 8, 2, 2, 92, 94, 3, 2, 2, 2, 93, 72, 3, 2, 2, 2, 93, 76, 3, 2, 2,
+	2, 93, 80, 3, 2, 2, 2, 94, 17, 3, 2, 2, 2, 95, 96, 9, 3, 2, 2, 96, 19,
+	3, 2, 2, 2, 97, 98, 5, 14, 8, 2, 98, 99, 7, 13, 2, 2, 99, 100, 5, 18, 10,
+	2, 100, 21, 3, 2, 2, 2, 101, 102, 7, 11, 2, 2, 102, 103, 5, 18, 10, 2,
+	103, 104, 7, 12, 2, 2, 104, 118, 3, 2, 2, 2, 105, 114, 7, 11, 2, 2, 106,
+	111, 5, 20, 11, 2, 107, 108, 7, 9, 2, 2, 108, 110, 5, 20, 11, 2, 109, 107,
+	3, 2, 2, 2, 110, 113, 3, 2, 2, 2, 111, 109, 3, 2, 2, 2, 111, 112, 3, 2,
+	2, 2, 112, 115, 3, 2, 2, 2, 113, 111, 3, 2, 2, 2, 114, 106, 3, 2, 2, 2,
+	114, 115, 3, 2, 2, 2, 115, 116, 3, 2, 2, 2, 116, 118, 7, 12, 2, 2, 117,
+	101, 3, 2, 2, 2, 117, 105, 3, 2, 2, 2, 118, 23, 3, 2, 2, 2, 17, 30, 35,
+	44, 48, 52, 55, 59, 63, 70, 84, 87, 93, 111, 114, 117,
 }
 var literalNames = []string{
-	"", "'\\'", "", "", "'}'", "','", "'\"'", "'['", "']'", "'='", "", "'{'",
+	"", "'\\'", "", "", "", "", "'}'", "','", "'\"'", "'['", "']'", "'='",
+	"", "'{'",
 }
 var symbolicNames = []string{
-	"", "BACKSLASH", "NL", "TEXT", "CLOSE_BRACE", "COMMA", "QUOTE", "OPEN_BRACKET",
-	"CLOSE_BRACKET", "EQUALS", "SPACE", "OPEN_BRACE", "STR", "NUMBER", "BOOLEAN",
-	"ALPHANUMERIC",
+	"", "BACKSLASH", "NL", "DOLLAR", "DOLLARS", "TEXT", "CLOSE_BRACE", "COMMA",
+	"QUOTE", "OPEN_BRACKET", "CLOSE_BRACKET", "EQUALS", "SPACE", "OPEN_BRACE",
+	"STR", "NUMBER", "BOOLEAN", "ALPHANUMERIC", "MDOLLAR", "MDOLLARS", "MTEXT",
 }
 
 var ruleNames = []string{
@@ -108,19 +116,24 @@ const (
 	NupParserEOF           = antlr.TokenEOF
 	NupParserBACKSLASH     = 1
 	NupParserNL            = 2
-	NupParserTEXT          = 3
-	NupParserCLOSE_BRACE   = 4
-	NupParserCOMMA         = 5
-	NupParserQUOTE         = 6
-	NupParserOPEN_BRACKET  = 7
-	NupParserCLOSE_BRACKET = 8
-	NupParserEQUALS        = 9
-	NupParserSPACE         = 10
-	NupParserOPEN_BRACE    = 11
-	NupParserSTR           = 12
-	NupParserNUMBER        = 13
-	NupParserBOOLEAN       = 14
-	NupParserALPHANUMERIC  = 15
+	NupParserDOLLAR        = 3
+	NupParserDOLLARS       = 4
+	NupParserTEXT          = 5
+	NupParserCLOSE_BRACE   = 6
+	NupParserCOMMA         = 7
+	NupParserQUOTE         = 8
+	NupParserOPEN_BRACKET  = 9
+	NupParserCLOSE_BRACKET = 10
+	NupParserEQUALS        = 11
+	NupParserSPACE         = 12
+	NupParserOPEN_BRACE    = 13
+	NupParserSTR           = 14
+	NupParserNUMBER        = 15
+	NupParserBOOLEAN       = 16
+	NupParserALPHANUMERIC  = 17
+	NupParserMDOLLAR       = 18
+	NupParserMDOLLARS      = 19
+	NupParserMTEXT         = 20
 )
 
 // NupParser rules.
@@ -688,7 +701,7 @@ func (p *NupParser) Block() (localctx IBlockContext) {
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
-	for ok := true; ok; ok = _la == NupParserBACKSLASH || _la == NupParserTEXT {
+	for ok := true; ok; ok = (((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<NupParserBACKSLASH)|(1<<NupParserDOLLAR)|(1<<NupParserDOLLARS)|(1<<NupParserTEXT)|(1<<NupParserMTEXT))) != 0) {
 		{
 			p.SetState(48)
 			p.Content()
@@ -824,14 +837,14 @@ func (p *NupParser) Content() (localctx IContentContext) {
 	p.GetErrorHandler().Sync(p)
 
 	switch p.GetTokenStream().LA(1) {
-	case NupParserBACKSLASH:
+	case NupParserBACKSLASH, NupParserDOLLAR, NupParserDOLLARS:
 		p.EnterOuterAlt(localctx, 1)
 		{
 			p.SetState(59)
 			p.Command()
 		}
 
-	case NupParserTEXT:
+	case NupParserTEXT, NupParserMTEXT:
 		p.EnterOuterAlt(localctx, 2)
 		{
 			p.SetState(60)
@@ -887,6 +900,10 @@ func (s *TextContext) TEXT() antlr.TerminalNode {
 	return s.GetToken(NupParserTEXT, 0)
 }
 
+func (s *TextContext) MTEXT() antlr.TerminalNode {
+	return s.GetToken(NupParserMTEXT, 0)
+}
+
 func (s *TextContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
@@ -910,6 +927,7 @@ func (s *TextContext) ExitRule(listener antlr.ParseTreeListener) {
 func (p *NupParser) Text() (localctx ITextContext) {
 	localctx = NewTextContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 10, NupParserRULE_text)
+	var _la int
 
 	defer func() {
 		p.ExitRule()
@@ -930,7 +948,14 @@ func (p *NupParser) Text() (localctx ITextContext) {
 	p.EnterOuterAlt(localctx, 1)
 	{
 		p.SetState(63)
-		p.Match(NupParserTEXT)
+		_la = p.GetTokenStream().LA(1)
+
+		if !(_la == NupParserTEXT || _la == NupParserMTEXT) {
+			p.GetErrorHandler().RecoverInline(p)
+		} else {
+			p.GetErrorHandler().ReportMatch(p)
+			p.Consume()
+		}
 	}
 
 	return localctx
@@ -1049,17 +1074,17 @@ type ICommandContext interface {
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
 
-	// GetCmd returns the cmd rule contexts.
-	GetCmd() IIdentifierContext
+	// GetCmd returns the cmd token.
+	GetCmd() antlr.Token
+
+	// SetCmd sets the cmd token.
+	SetCmd(antlr.Token)
 
 	// GetAttributes returns the attributes rule contexts.
 	GetAttributes() IAttrsContext
 
 	// GetInner returns the inner rule contexts.
 	GetInner() IBlockContext
-
-	// SetCmd sets the cmd rule contexts.
-	SetCmd(IIdentifierContext)
 
 	// SetAttributes sets the attributes rule contexts.
 	SetAttributes(IAttrsContext)
@@ -1074,7 +1099,7 @@ type ICommandContext interface {
 type CommandContext struct {
 	*antlr.BaseParserRuleContext
 	parser     antlr.Parser
-	cmd        IIdentifierContext
+	cmd        antlr.Token
 	attributes IAttrsContext
 	inner      IBlockContext
 }
@@ -1101,17 +1126,43 @@ func NewCommandContext(parser antlr.Parser, parent antlr.ParserRuleContext, invo
 
 func (s *CommandContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *CommandContext) GetCmd() IIdentifierContext { return s.cmd }
+func (s *CommandContext) GetCmd() antlr.Token { return s.cmd }
+
+func (s *CommandContext) SetCmd(v antlr.Token) { s.cmd = v }
 
 func (s *CommandContext) GetAttributes() IAttrsContext { return s.attributes }
 
 func (s *CommandContext) GetInner() IBlockContext { return s.inner }
 
-func (s *CommandContext) SetCmd(v IIdentifierContext) { s.cmd = v }
-
 func (s *CommandContext) SetAttributes(v IAttrsContext) { s.attributes = v }
 
 func (s *CommandContext) SetInner(v IBlockContext) { s.inner = v }
+
+func (s *CommandContext) Text() ITextContext {
+	var t = s.GetTypedRuleContext(reflect.TypeOf((*ITextContext)(nil)).Elem(), 0)
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(ITextContext)
+}
+
+func (s *CommandContext) MDOLLARS() antlr.TerminalNode {
+	return s.GetToken(NupParserMDOLLARS, 0)
+}
+
+func (s *CommandContext) DOLLARS() antlr.TerminalNode {
+	return s.GetToken(NupParserDOLLARS, 0)
+}
+
+func (s *CommandContext) MDOLLAR() antlr.TerminalNode {
+	return s.GetToken(NupParserMDOLLAR, 0)
+}
+
+func (s *CommandContext) DOLLAR() antlr.TerminalNode {
+	return s.GetToken(NupParserDOLLAR, 0)
+}
 
 func (s *CommandContext) BACKSLASH() antlr.TerminalNode {
 	return s.GetToken(NupParserBACKSLASH, 0)
@@ -1125,16 +1176,6 @@ func (s *CommandContext) CLOSE_BRACE() antlr.TerminalNode {
 	return s.GetToken(NupParserCLOSE_BRACE, 0)
 }
 
-func (s *CommandContext) Identifier() IIdentifierContext {
-	var t = s.GetTypedRuleContext(reflect.TypeOf((*IIdentifierContext)(nil)).Elem(), 0)
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(IIdentifierContext)
-}
-
 func (s *CommandContext) Block() IBlockContext {
 	var t = s.GetTypedRuleContext(reflect.TypeOf((*IBlockContext)(nil)).Elem(), 0)
 
@@ -1143,6 +1184,14 @@ func (s *CommandContext) Block() IBlockContext {
 	}
 
 	return t.(IBlockContext)
+}
+
+func (s *CommandContext) AllALPHANUMERIC() []antlr.TerminalNode {
+	return s.GetTokens(NupParserALPHANUMERIC)
+}
+
+func (s *CommandContext) ALPHANUMERIC(i int) antlr.TerminalNode {
+	return s.GetToken(NupParserALPHANUMERIC, i)
 }
 
 func (s *CommandContext) Attrs() IAttrsContext {
@@ -1196,46 +1245,101 @@ func (p *NupParser) Command() (localctx ICommandContext) {
 		}
 	}()
 
-	p.EnterOuterAlt(localctx, 1)
-	{
-		p.SetState(70)
-		p.Match(NupParserBACKSLASH)
-	}
-	{
-		p.SetState(71)
-
-		var _x = p.Identifier()
-
-		localctx.(*CommandContext).cmd = _x
-	}
-	p.SetState(73)
+	p.SetState(91)
 	p.GetErrorHandler().Sync(p)
-	_la = p.GetTokenStream().LA(1)
 
-	if _la == NupParserOPEN_BRACKET {
+	switch p.GetTokenStream().LA(1) {
+	case NupParserDOLLARS:
+		p.EnterOuterAlt(localctx, 1)
+		{
+			p.SetState(70)
+
+			var _m = p.Match(NupParserDOLLARS)
+
+			localctx.(*CommandContext).cmd = _m
+		}
+		{
+			p.SetState(71)
+			p.Text()
+		}
 		{
 			p.SetState(72)
-
-			var _x = p.Attrs()
-
-			localctx.(*CommandContext).attributes = _x
+			p.Match(NupParserMDOLLARS)
 		}
 
-	}
-	{
-		p.SetState(75)
-		p.Match(NupParserOPEN_BRACE)
-	}
-	{
-		p.SetState(76)
+	case NupParserDOLLAR:
+		p.EnterOuterAlt(localctx, 2)
+		{
+			p.SetState(74)
 
-		var _x = p.Block()
+			var _m = p.Match(NupParserDOLLAR)
 
-		localctx.(*CommandContext).inner = _x
-	}
-	{
-		p.SetState(77)
-		p.Match(NupParserCLOSE_BRACE)
+			localctx.(*CommandContext).cmd = _m
+		}
+		{
+			p.SetState(75)
+			p.Text()
+		}
+		{
+			p.SetState(76)
+			p.Match(NupParserMDOLLAR)
+		}
+
+	case NupParserBACKSLASH:
+		p.EnterOuterAlt(localctx, 3)
+		{
+			p.SetState(78)
+			p.Match(NupParserBACKSLASH)
+		}
+		p.SetState(80)
+		p.GetErrorHandler().Sync(p)
+		_la = p.GetTokenStream().LA(1)
+
+		for ok := true; ok; ok = _la == NupParserALPHANUMERIC {
+			{
+				p.SetState(79)
+
+				var _m = p.Match(NupParserALPHANUMERIC)
+
+				localctx.(*CommandContext).cmd = _m
+			}
+
+			p.SetState(82)
+			p.GetErrorHandler().Sync(p)
+			_la = p.GetTokenStream().LA(1)
+		}
+		p.SetState(85)
+		p.GetErrorHandler().Sync(p)
+		_la = p.GetTokenStream().LA(1)
+
+		if _la == NupParserOPEN_BRACKET {
+			{
+				p.SetState(84)
+
+				var _x = p.Attrs()
+
+				localctx.(*CommandContext).attributes = _x
+			}
+
+		}
+		{
+			p.SetState(87)
+			p.Match(NupParserOPEN_BRACE)
+		}
+		{
+			p.SetState(88)
+
+			var _x = p.Block()
+
+			localctx.(*CommandContext).inner = _x
+		}
+		{
+			p.SetState(89)
+			p.Match(NupParserCLOSE_BRACE)
+		}
+
+	default:
+		panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 	}
 
 	return localctx
@@ -1334,7 +1438,7 @@ func (p *NupParser) Val() (localctx IValContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(79)
+		p.SetState(93)
 		_la = p.GetTokenStream().LA(1)
 
 		if !(((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<NupParserSTR)|(1<<NupParserNUMBER)|(1<<NupParserBOOLEAN))) != 0) {
@@ -1474,18 +1578,18 @@ func (p *NupParser) Attr() (localctx IAttrContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(81)
+		p.SetState(95)
 
 		var _x = p.Identifier()
 
 		localctx.(*AttrContext).name = _x
 	}
 	{
-		p.SetState(82)
+		p.SetState(96)
 		p.Match(NupParserEQUALS)
 	}
 	{
-		p.SetState(83)
+		p.SetState(97)
 
 		var _x = p.Val()
 
@@ -1645,70 +1749,70 @@ func (p *NupParser) Attrs() (localctx IAttrsContext) {
 		}
 	}()
 
-	p.SetState(101)
+	p.SetState(115)
 	p.GetErrorHandler().Sync(p)
-	switch p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 12, p.GetParserRuleContext()) {
+	switch p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 14, p.GetParserRuleContext()) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(85)
+			p.SetState(99)
 			p.Match(NupParserOPEN_BRACKET)
 		}
 		{
-			p.SetState(86)
+			p.SetState(100)
 
 			var _x = p.Val()
 
 			localctx.(*AttrsContext).value = _x
 		}
 		{
-			p.SetState(87)
+			p.SetState(101)
 			p.Match(NupParserCLOSE_BRACKET)
 		}
 
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(89)
+			p.SetState(103)
 			p.Match(NupParserOPEN_BRACKET)
 		}
-		p.SetState(98)
+		p.SetState(112)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
 
 		if _la == NupParserALPHANUMERIC {
 			{
-				p.SetState(90)
+				p.SetState(104)
 
 				var _x = p.Attr()
 
 				localctx.(*AttrsContext).attribute = _x
 			}
-			p.SetState(95)
+			p.SetState(109)
 			p.GetErrorHandler().Sync(p)
 			_la = p.GetTokenStream().LA(1)
 
 			for _la == NupParserCOMMA {
 				{
-					p.SetState(91)
+					p.SetState(105)
 					p.Match(NupParserCOMMA)
 				}
 				{
-					p.SetState(92)
+					p.SetState(106)
 
 					var _x = p.Attr()
 
 					localctx.(*AttrsContext).attribute = _x
 				}
 
-				p.SetState(97)
+				p.SetState(111)
 				p.GetErrorHandler().Sync(p)
 				_la = p.GetTokenStream().LA(1)
 			}
 
 		}
 		{
-			p.SetState(100)
+			p.SetState(114)
 			p.Match(NupParserCLOSE_BRACKET)
 		}
 

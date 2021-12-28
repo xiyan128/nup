@@ -12,10 +12,11 @@ block: (content newLine? content?)+;
 
 content: command | text;
 
-text: TEXT;
+text: TEXT | MTEXT;
 identifier: ALPHANUMERIC+;
-command: BACKSLASH cmd=identifier attributes=attrs? OPEN_BRACE inner=block CLOSE_BRACE;
-//command: BACKSLASH;
+command: cmd=DOLLARS text MDOLLARS
+    | cmd=DOLLAR text MDOLLAR
+    | BACKSLASH cmd=ALPHANUMERIC+ attributes=attrs? OPEN_BRACE inner=block CLOSE_BRACE;
 val: (STR | NUMBER | BOOLEAN);
 attr :  name=identifier EQUALS value=val;
 attrs: OPEN_BRACKET value=val CLOSE_BRACKET | OPEN_BRACKET (attribute=attr (COMMA attribute=attr) *)? CLOSE_BRACKET;
