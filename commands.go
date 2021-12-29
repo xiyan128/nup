@@ -72,13 +72,28 @@ var commands = map[string]interface{}{
 	// reference
 	"ref": struct {
 		BaseCommand
-		to string `html:"href"`
-	}{},
+		refNum int
+		to     string
+	}{
+		BaseCommand: BaseCommand{
+			HtmlTarget: HtmlTarget{
+				_htmlOpenTag:  `<span{{.attrs}}>`,
+				_htmlCloseTag: `<a href="#{{.to}}"><sup>{{.refNum}}</sup></a></span>`,
+			},
+		},
+	},
 	// dereference
-	"ref*": struct {
+	"deref": struct {
 		BaseCommand
-		from string `html:"id"`
-	}{},
+		refNum int
+	}{
+		BaseCommand: BaseCommand{
+			HtmlTarget: HtmlTarget{
+				_htmlOpenTag:  "<span{{.attrs}}><sup>{{.refNum}}</sup>",
+				_htmlCloseTag: "</span>",
+			},
+		},
+	},
 	// paragraph
 	"para": struct {
 		BaseCommand
@@ -197,7 +212,10 @@ func extractTag(value interface{}, key string) (htmlAttr string, ok bool) {
 	for i := 0; i < ift.NumField(); i++ {
 		v := ifv.Field(i)
 		if f := ift.Field(i); f.Name == key {
-			return f.Tag.Get("html"), true
+			res := f.Tag.Get("html")
+			if res != "" {
+				return f.Tag.Get("html"), true
+			}
 		}
 		if v.Kind() == reflect.Struct {
 			htmlAttr, ok = extractTag(v.Interface(), key)

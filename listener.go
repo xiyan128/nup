@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha1"
+	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"hash"
 	"io"
@@ -35,11 +36,55 @@ type environment struct {
 	vars    map[string]interface{}
 }
 
+type refCounterEntry struct {
+	count int
+	match bool
+}
+
+type refCounter struct {
+	numRefs int
+	m       map[string]*refCounterEntry
+}
+
+func NewRefCounter() *refCounter {
+	return &refCounter{
+		numRefs: 0,
+		m:       make(map[string]*refCounterEntry),
+	}
+}
+
+func (r *refCounter) addRef(id string) int {
+	if r.m[id] == nil {
+		r.numRefs++
+		r.m[id] = &refCounterEntry{r.numRefs, false}
+	}
+	return r.m[id].count
+}
+
+func (r *refCounter) addDeref(id string) (int, error) {
+	if r.m[id] == nil {
+		return -1, fmt.Errorf("reference \"%s\" was never defined", id)
+	}
+	r.m[id].match = true
+	return r.m[id].count, nil
+}
+
+func (r *refCounter) allMatched() error {
+	for id, e := range r.m {
+		if !e.match {
+			return fmt.Errorf("unmatched reference \"%s\" ", id)
+		}
+	}
+	return nil
+}
+
 type NupListener struct {
 	*parser.BaseNupParserListener
 	env            *environment
 	documentWriter DocumentWriter
 	writer         io.Writer
+	refCounter     *refCounter
+	idPool         map[string]bool
 }
 
 func NewNupListener(writer io.Writer) *NupListener {
@@ -47,6 +92,8 @@ func NewNupListener(writer io.Writer) *NupListener {
 		documentWriter: NewHtmlWriter(),
 		env:            &environment{vars: make(map[string]interface{})},
 		writer:         writer,
+		refCounter:     NewRefCounter(),
+		idPool:         make(map[string]bool),
 	}
 }
 
@@ -61,6 +108,49 @@ func (s *NupListener) GetActiveCommands() []string {
 
 func (s *NupListener) GetCurrentCommand() string {
 	return s.env.command
+}
+
+func (s *NupListener) getAttribute(name string) (interface{}, bool) {
+	val, ok := s.env.vars[name]
+	return val, ok
+}
+
+func (s *NupListener) setAttribute(name string, value interface{}) {
+	s.env.vars[name] = value
+}
+
+func (s *NupListener) checkDeref() {
+	if s.GetCurrentCommand() == "ref" {
+		if id, ok := s.getAttribute("to"); ok {
+			count := s.refCounter.addRef(id.(string))
+			s.setAttribute("refNum", count)
+		} else {
+			panic("Field \"to\" is required")
+		}
+	}
+}
+
+func (s *NupListener) checkRef() {
+	if s.GetCurrentCommand() == "deref" {
+		if id, ok := s.getAttribute("id"); ok {
+			count, err := s.refCounter.addDeref(id.(string))
+			if err != nil {
+				panic(err)
+			}
+			s.setAttribute("refNum", count)
+		} else {
+			panic("deref must have an id")
+		}
+	}
+}
+
+func (s *NupListener) checkDuplicateId() {
+	if val, ok := s.getAttribute("id"); ok {
+		if s.idPool[val.(string)] {
+			panic("duplicate id \"" + val.(string) + "\" not allowed")
+		}
+		s.idPool[val.(string)] = true
+	}
 }
 
 // VisitTerminal is called when a terminal node is visited.
@@ -104,7 +194,12 @@ func (s *NupListener) ExitDocument(ctx *parser.DocumentContext) {
 		}
 	}(s.documentWriter, s.writer)
 
-	_, err := s.documentWriter.WritePostamble()
+	err := s.refCounter.allMatched()
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = s.documentWriter.WritePostamble()
 	if err != nil {
 		return
 	}
@@ -178,20 +273,7 @@ func (s *NupListener) EnterCommand(ctx *parser.CommandContext) {
 			if attr, ok := attrs.GetChild(i).(*parser.AttrContext); ok {
 				if attr.GetName() != nil {
 					if attrType, ok := validAttrs[attr.GetName().GetText()]; ok {
-						value := attr.GetValue().GetText()
-						var parsed interface{}
-						// parse value into int, float, bool, or string
-						if value == "true" || value == "false" {
-							parsed = value == "true"
-						} else if i, err := strconv.Atoi(value); err == nil {
-							parsed = i
-						} else if f, err := strconv.ParseFloat(value, 64); err == nil {
-							parsed = f
-						} else if str, err := strconv.Unquote(value); err == nil {
-							parsed = str
-						} else {
-							parsed = nil
-						}
+						parsed := parseAttrValue(attr.GetValue().GetText())
 						switch reflect.TypeOf(parsed) {
 						case attrType:
 							attrsMap[attr.GetName().GetText()] = parsed
@@ -199,15 +281,34 @@ func (s *NupListener) EnterCommand(ctx *parser.CommandContext) {
 							panic("Wrong type: " + ctx.GetText() + " at " + strconv.FormatInt(int64(ctx.GetStart().GetLine()), 10))
 						}
 					} else {
+						// TODO: better error handling should be implemented
 						panic("Wrong attribute")
 					}
 				}
 			}
 		}
 	}
-
 	s.pushEnv(attrsMap, cmd)
+	s.checkDuplicateId()
 	s.writeHTMLOpenTag()
+}
+
+func parseAttrValue(s string) interface{} {
+	value := s
+	var parsed interface{}
+	// parse value into int, float, bool, or string
+	if value == "true" || value == "false" {
+		parsed = value == "true"
+	} else if i, err := strconv.Atoi(value); err == nil {
+		parsed = i
+	} else if f, err := strconv.ParseFloat(value, 64); err == nil {
+		parsed = f
+	} else if str, err := strconv.Unquote(value); err == nil {
+		parsed = str
+	} else {
+		parsed = nil
+	}
+	return parsed
 }
 
 func (s *NupListener) pushEnv(attrsMap map[string]interface{}, cmd string) {
@@ -226,6 +327,10 @@ func (s *NupListener) popEnv() {
 }
 
 func (s *NupListener) writeHTMLTag(tag bool) {
+
+	s.checkRef()
+	s.checkDeref()
+
 	cmd := s.GetCurrentCommand()
 	openTag, closeTag := GetHtmlTags(cmd, s.env.vars)
 	if tag {
