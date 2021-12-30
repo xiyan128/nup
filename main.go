@@ -11,64 +11,51 @@ import (
 )
 
 func main() {
-	is := antlr.NewInputStream(
-		`
-\title{Nup, a markup language for the web}
 
-\bf[id="123"]{this is the start of a \ref[to="q1"]{new chapter}}
+	// parse command line arguments
+	if len(os.Args) < 3 {
+		fmt.Fprintln(os.Stderr, "Usage: nup <input file> <output file>")
+		os.Exit(1)
+	}
+	inputFile := os.Args[1]
+	outputFile := os.Args[2]
 
-\para[id="124"]{haha}Qawae
+	// Setup the input
+	is, err := antlr.NewFileStream(inputFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error opening input file: %s\n", err.Error())
+		os.Exit(1)
+	}
 
-\deref[id="q1"]{q1}
-
-Let's write some latex: $x^2 + y^2 = z^2$. This conclusion is drawn from \ref[to="q2"]{this equation}
-
-\heading{this is a heading}
-
-\quote[cite="https://google.com"]{
-This is really cool, \it{isn't it?}\ref[to="1s1"]{}
-\deref[id="q2"]{$\frac{1}{2} \int_2 x^2 dx$}
-
-This is a second paragraph in the quote, 
-and this is not a new paragraph.
-
-This, however, is a new paragraph.
-}
-
-\para{a para}
-\deref[id="1s1"]{this ` + "`function`" + ` is been referenced}
-
-another para
-
-\figure[src="https://www.w3schools.com/images/colorpicker2000.png"]{caption}
-
-\box[title="this is the title"]{this is the content}
-
-` + "```[lang=\"cpp\"]" + `
-package main
-import "fmt"
-func main() {
-	fmt.Println("Hello, 世界")
-}` + "```" + `
-nea \para{dsa}
-`)
+	// global error handler
 	errorHandler := &errhandler.NupErrorListener{}
+
+	// set up the lexer
 	lexer := parser.NewNupLexer(is)
 	lexer.RemoveErrorListeners()
 	lexer.AddErrorListener(errorHandler)
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 
+	// set up the parser
 	p := parser.NewNupParser(stream)
 	p.RemoveErrorListeners()
 	p.AddErrorListener(errorHandler)
 
 	// write to file
-	f, _ := os.Create("output.html")
-	w := bufio.NewWriter(f)
+	output, _ := os.Create(outputFile)
+	w := bufio.NewWriter(output)
+
+	defer func(output *os.File) {
+		err := w.Flush()
+		err = output.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error flushing to the output file: %s\n", err.Error())
+		}
+	}(output)
 
 	antlr.ParseTreeWalkerDefault.Walk(translator.NewNupListener(w, errorHandler), p.Document())
-	w.Flush()
 
+	// print all the errors
 	for _, err := range errorHandler.Errors {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 	}

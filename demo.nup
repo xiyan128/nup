@@ -1,0 +1,29 @@
+\title{Nup, a hybrid markup language for fun}
+
+Have you ever wanted to write a document in a markup language that is simpler
+than $\LaTeX$ yet more powerful than \href[to="https://en.wikipedia.org/wiki/Markdown"]{Markdown}? Well, Nup is for you.
+
+\quote{Nup is more than a toy language the author created within 3 days during
+the winter break --- it is a markup language that is both simple and powerful.}
+
+For example, you can use inline markup to write \bf{bold text}, \it{italic
+text}, and `inline.code()`. Even inline math like $x^2$ is supported.
+
+Also, you can write \ref[to="code"]{code blocks} like this:
+
+```
+#include <iostream>
+int main() {
+    std::cout << "Hello, world!" << std::endl;
+}
+```
+
+And math blocks like this:
+
+$$
+x^2 + y^2 = z^2
+$$
+
+More features are coming soon!
+
+\deref[id="code"]{a code block is a block of code that is indented and surrounded by three backticks}
