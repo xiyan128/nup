@@ -51,6 +51,12 @@ func (s *BaseNupParserListener) EnterContent(ctx *ContentContext) {}
 // ExitContent is called when production content is exited.
 func (s *BaseNupParserListener) ExitContent(ctx *ContentContext) {}
 
+// EnterLanguage is called when production language is entered.
+func (s *BaseNupParserListener) EnterLanguage(ctx *LanguageContext) {}
+
+// ExitLanguage is called when production language is exited.
+func (s *BaseNupParserListener) ExitLanguage(ctx *LanguageContext) {}
+
 // EnterText is called when production text is entered.
 func (s *BaseNupParserListener) EnterText(ctx *TextContext) {}
 

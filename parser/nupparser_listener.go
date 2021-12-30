@@ -23,6 +23,9 @@ type NupParserListener interface {
 	// EnterContent is called when entering the content production.
 	EnterContent(c *ContentContext)
 
+	// EnterLanguage is called when entering the language production.
+	EnterLanguage(c *LanguageContext)
+
 	// EnterText is called when entering the text production.
 	EnterText(c *TextContext)
 
@@ -55,6 +58,9 @@ type NupParserListener interface {
 
 	// ExitContent is called when exiting the content production.
 	ExitContent(c *ContentContext)
+
+	// ExitLanguage is called when exiting the language production.
+	ExitLanguage(c *LanguageContext)
 
 	// ExitText is called when exiting the text production.
 	ExitText(c *TextContext)

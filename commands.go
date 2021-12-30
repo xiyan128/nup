@@ -41,12 +41,14 @@ var commands = map[string]interface{}{
 		},
 	},
 	// inline code
-	"ic": struct{ BaseCommand }{
+	// for now, attributes are not supported
+	"`": struct{ BaseCommand }{
 		BaseCommand{
 			HtmlTarget: HtmlTarget{`<code{{.attrs}}>`, `</code>`},
 		},
 	},
 	// inline math
+	// for now, attributes are not supported
 	"$": struct {
 		BaseCommand
 		MathCommand
@@ -117,9 +119,9 @@ var commands = map[string]interface{}{
 		},
 	},
 	// math block
+	// for not, attributes are not supported
 	"$$": struct {
 		BaseCommand
-		BlockCommand
 		MathCommand
 	}{
 		BaseCommand: BaseCommand{
@@ -127,25 +129,75 @@ var commands = map[string]interface{}{
 		},
 	},
 	// code block
-	"code": struct {
+	"```": struct {
 		BaseCommand
-		BlockCommand
 		lang string `html:"data-lang"`
-	}{},
-	// image
-	"image": struct {
+	}{
+		BaseCommand: BaseCommand{
+			HtmlTarget: HtmlTarget{
+				_htmlOpenTag:  "<pre><code{{.attrs}}>",
+				_htmlCloseTag: "</code></pre>",
+			},
+		},
+	},
+	"figure": struct {
 		BaseCommand
 		BlockCommand
-		width  string `html:"data-width"`
-		height string `html:"data-height"`
+		src    string `html:"src"`
+		width  int    `html:"width"`
+		height int    `html:"height"`
 		align  string `html:"data-align"`
-	}{},
+	}{
+		BaseCommand: BaseCommand{
+			HtmlTarget: HtmlTarget{
+				_htmlOpenTag:  "<figure><img{{.attrs}}/><figcaption>",
+				_htmlCloseTag: "</figcaption></figure>",
+			},
+		},
+	},
 	// box
 	"box": struct {
 		BaseCommand
 		BlockCommand
-		title string `html:"data-title"`
-	}{},
+		title string
+	}{
+		BaseCommand: BaseCommand{
+			HtmlTarget: HtmlTarget{
+				_htmlOpenTag:  "<div{{.attrs}}>{{if .title}}<div>{{.title}}</div>{{end}}",
+				_htmlCloseTag: "</div>",
+			},
+		},
+	},
+	"title": struct {
+		BaseCommand
+	}{
+		BaseCommand: BaseCommand{
+			HtmlTarget: HtmlTarget{
+				_htmlOpenTag:  "<h1{{.attrs}}>",
+				_htmlCloseTag: "</h3>",
+			},
+		},
+	},
+	"subtitle": struct {
+		BaseCommand
+	}{
+		BaseCommand: BaseCommand{
+			HtmlTarget: HtmlTarget{
+				_htmlOpenTag:  "<h2{{.attrs}}>",
+				_htmlCloseTag: "</h3>",
+			},
+		},
+	},
+	"heading": struct {
+		BaseCommand
+	}{
+		BaseCommand: BaseCommand{
+			HtmlTarget: HtmlTarget{
+				_htmlOpenTag:  "<h3{{.attrs}}>",
+				_htmlCloseTag: "</h3>",
+			},
+		},
+	},
 }
 
 var attrsTypes map[string]map[string]reflect.Type
