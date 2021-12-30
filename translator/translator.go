@@ -8,6 +8,7 @@ import (
 	"io"
 	"reflect"
 	"strconv"
+	"xiyan.life/nup/errhandler"
 	"xiyan.life/nup/parser"
 )
 
@@ -63,7 +64,7 @@ func (r *refCounter) addRef(id string) int {
 
 func (r *refCounter) addDeref(id string) (int, error) {
 	if r.m[id] == nil {
-		return -1, fmt.Errorf("reference \"%s\" was never defined", id)
+		return -1, fmt.Errorf("dereferencing unknown id %s", id)
 	}
 	r.m[id].match = true
 	return r.m[id].count, nil
@@ -85,185 +86,194 @@ type Translator struct {
 	writer         io.Writer
 	refCounter     *refCounter
 	idPool         map[string]bool
+	errorHandler   *errhandler.NupErrorListener
+	currCtx        antlr.ParserRuleContext
 }
 
-func NewNupListener(writer io.Writer) *Translator {
+func NewNupListener(writer io.Writer, errorHandler *errhandler.NupErrorListener) *Translator {
 	return &Translator{
 		documentWriter: NewHtmlWriter(),
 		env:            &environment{vars: make(map[string]interface{})},
 		writer:         writer,
 		refCounter:     NewRefCounter(),
 		idPool:         make(map[string]bool),
+		errorHandler:   errorHandler,
 	}
 }
 
+func (t *Translator) reportRuntimeError(msg string) {
+	t.errorHandler.RuntimeError(t.currCtx.GetStart().GetLine(), t.currCtx.GetStart().GetColumn(), msg)
+}
+
 // GetActiveCommands climbs up the environment tree to find the active commands
-func (s *Translator) GetActiveCommands() []string {
+func (t *Translator) GetActiveCommands() []string {
 	var commands []string
-	for env := s.env; env != nil; env = env.parent {
+	for env := t.env; env != nil; env = env.parent {
 		commands = append(commands, env.command)
 	}
 	return commands
 }
 
-func (s *Translator) GetCurrentCommand() string {
-	return s.env.command
+func (t *Translator) GetCurrentCommand() string {
+	return t.env.command
 }
 
-func (s *Translator) getAttribute(name string) (interface{}, bool) {
-	val, ok := s.env.vars[name]
+func (t *Translator) getAttribute(name string) (interface{}, bool) {
+	val, ok := t.env.vars[name]
 	return val, ok
 }
 
-func (s *Translator) setAttribute(name string, value interface{}) {
-	s.env.vars[name] = value
+func (t *Translator) setAttribute(name string, value interface{}) {
+	t.env.vars[name] = value
 }
 
-func (s *Translator) checkDeref() {
-	if s.GetCurrentCommand() == Reference {
-		if id, ok := s.getAttribute("to"); ok {
-			count := s.refCounter.addRef(id.(string))
-			s.setAttribute("refNum", count)
+func (t *Translator) checkRef() {
+	if t.GetCurrentCommand() == Reference {
+		if id, ok := t.getAttribute("to"); ok {
+			count := t.refCounter.addRef(id.(string))
+			t.setAttribute("refNum", count)
 		} else {
-			panic("Field \"to\" is required")
+			t.reportRuntimeError("field \"to\" is required")
 		}
 	}
 }
 
-func (s *Translator) checkRef() {
-	if s.GetCurrentCommand() == Dereference {
-		if id, ok := s.getAttribute("id"); ok {
-			count, err := s.refCounter.addDeref(id.(string))
+func (t *Translator) checkDeref() {
+	if t.GetCurrentCommand() == Dereference {
+		if id, ok := t.getAttribute("id"); ok {
+			count, err := t.refCounter.addDeref(id.(string))
 			if err != nil {
-				panic(err)
+				t.reportRuntimeError(err.Error())
 			}
-			s.setAttribute("refNum", count)
+			t.setAttribute("refNum", count)
 		} else {
-			panic("deref must have an id")
+			t.reportRuntimeError("deref must have an id")
 		}
 	}
 }
 
-func (s *Translator) checkDuplicateId() {
-	if val, ok := s.getAttribute("id"); ok {
-		if s.idPool[val.(string)] {
-			panic("duplicate id \"" + val.(string) + "\" not allowed")
+func (t *Translator) checkDuplicateId() {
+	if val, ok := t.getAttribute("id"); ok {
+		if t.idPool[val.(string)] {
+			t.reportRuntimeError("duplicate id \"" + val.(string) + "\" not allowed")
 		}
-		s.idPool[val.(string)] = true
+		t.idPool[val.(string)] = true
 	}
 }
 
 // VisitTerminal is called when a terminal node is visited.
-func (s *Translator) VisitTerminal(node antlr.TerminalNode) {}
+func (t *Translator) VisitTerminal(node antlr.TerminalNode) {}
 
 // VisitErrorNode is called when an error node is visited.
-func (s *Translator) VisitErrorNode(node antlr.ErrorNode) {}
+func (t *Translator) VisitErrorNode(node antlr.ErrorNode) {}
 
 // EnterEveryRule is called when any rule is entered.
-func (s *Translator) EnterEveryRule(ctx antlr.ParserRuleContext) {}
+func (t *Translator) EnterEveryRule(ctx antlr.ParserRuleContext) {
+	t.currCtx = ctx
+}
 
 // ExitEveryRule is called when any rule is exited.
-func (s *Translator) ExitEveryRule(ctx antlr.ParserRuleContext) {}
+func (t *Translator) ExitEveryRule(ctx antlr.ParserRuleContext) {}
 
 // EnterNewLine is called when production newLine is entered.
-func (s *Translator) EnterNewLine(ctx *parser.NewLineContext) {}
+func (t *Translator) EnterNewLine(ctx *parser.NewLineContext) {}
 
 // ExitNewLine is called when production newLine is exited.
-func (s *Translator) ExitNewLine(ctx *parser.NewLineContext) {}
+func (t *Translator) ExitNewLine(ctx *parser.NewLineContext) {}
 
 // EnterBlankLines is called when production blankLines is entered.
-func (s *Translator) EnterBlankLines(ctx *parser.BlankLinesContext) {}
+func (t *Translator) EnterBlankLines(ctx *parser.BlankLinesContext) {}
 
 // ExitBlankLines is called when production blankLines is exited.
-func (s *Translator) ExitBlankLines(ctx *parser.BlankLinesContext) {}
+func (t *Translator) ExitBlankLines(ctx *parser.BlankLinesContext) {}
 
 // EnterDocument is called when production document is entered.
-func (s *Translator) EnterDocument(ctx *parser.DocumentContext) {
-	_, err := s.documentWriter.WritePreamble()
+func (t *Translator) EnterDocument(ctx *parser.DocumentContext) {
+	_, err := t.documentWriter.WritePreamble()
 	if err != nil {
 		return
 	}
 }
 
 // ExitDocument is called when production document is exited.
-func (s *Translator) ExitDocument(ctx *parser.DocumentContext) {
+func (t *Translator) ExitDocument(ctx *parser.DocumentContext) {
 	defer func(documentWriter DocumentWriter, writer io.Writer) {
 		_, err := documentWriter.Flush(writer)
 		if err != nil {
-			panic(err)
+			t.reportRuntimeError(err.Error())
 		}
-	}(s.documentWriter, s.writer)
+	}(t.documentWriter, t.writer)
 
-	err := s.refCounter.allMatched()
+	err := t.refCounter.allMatched()
 	if err != nil {
-		panic(err)
+		t.reportRuntimeError(err.Error())
 	}
 
-	_, err = s.documentWriter.WritePostamble()
+	_, err = t.documentWriter.WritePostamble()
 	if err != nil {
 		return
 	}
 }
 
 // EnterBlock is called when production block is entered.
-func (s *Translator) EnterBlock(ctx *parser.BlockContext) {
+func (t *Translator) EnterBlock(ctx *parser.BlockContext) {
 
 	// if the outer command is a block, or it is the outermost command, the inner command is implicitly a paragraph
-	cmd := s.GetCurrentCommand()
-	if (IsBlock(cmd) && cmd != Paragraph) || (cmd == "" && s.env.parent == nil) {
-		s.pushEnv(map[string]interface{}{"_implicit_para": true}, Paragraph)
+	cmd := t.GetCurrentCommand()
+	if (IsBlock(cmd) && cmd != Paragraph) || (cmd == "" && t.env.parent == nil) {
+		t.pushEnv(map[string]interface{}{"_implicit_para": true}, Paragraph)
 	}
-	if s.env.vars["_implicit_para"] != nil {
-		s.writeHTMLOpenTag()
+	if t.env.vars["_implicit_para"] != nil {
+		t.writeHTMLOpenTag()
 	}
 }
 
 // ExitBlock is called when production block is exited.
-func (s *Translator) ExitBlock(ctx *parser.BlockContext) {
-	if s.env.vars["_implicit_para"] != nil {
-		//s.env = s.env.parent
-		s.writeHTMLCloseTag()
-		s.popEnv()
+func (t *Translator) ExitBlock(ctx *parser.BlockContext) {
+	if t.env.vars["_implicit_para"] != nil {
+		//t.env = t.env.parent
+		t.writeHTMLCloseTag()
+		t.popEnv()
 	}
 }
 
 // EnterContent is called when production content is entered.
-func (s *Translator) EnterContent(ctx *parser.ContentContext) {}
+func (t *Translator) EnterContent(ctx *parser.ContentContext) {}
 
 // ExitContent is called when production content is exited.
-func (s *Translator) ExitContent(ctx *parser.ContentContext) {}
+func (t *Translator) ExitContent(ctx *parser.ContentContext) {}
 
 // EnterText is called when production text is entered.
-func (s *Translator) EnterText(ctx *parser.TextContext) {
-	_, err := s.documentWriter.WriteString(ctx.GetText())
+func (t *Translator) EnterText(ctx *parser.TextContext) {
+	_, err := t.documentWriter.WriteString(ctx.GetText())
 	if err != nil {
 		return
 	}
 }
 
 // ExitText is called when production text is exited.
-func (s *Translator) ExitText(ctx *parser.TextContext) {
+func (t *Translator) ExitText(ctx *parser.TextContext) {
 }
 
 // EnterIdentifier is called when production identifier is entered.
-func (s *Translator) EnterIdentifier(ctx *parser.IdentifierContext) {}
+func (t *Translator) EnterIdentifier(ctx *parser.IdentifierContext) {}
 
 // ExitIdentifier is called when production identifier is exited.
-func (s *Translator) ExitIdentifier(ctx *parser.IdentifierContext) {}
+func (t *Translator) ExitIdentifier(ctx *parser.IdentifierContext) {}
 
 // EnterCommand is called when production command is entered.
-func (s *Translator) EnterCommand(ctx *parser.CommandContext) {
+func (t *Translator) EnterCommand(ctx *parser.CommandContext) {
 
 	// parse and check the command
 	cmd := ctx.GetCmd().GetText()
 	validAttrs, ok := GetAttrTypes(cmd)
 	if !ok {
-		panic("Wrong command")
+		t.reportRuntimeError("command \"" + cmd + "\" is undefined")
 	}
 
 	// check if a block command is nested inside an inline command
-	if s.env.parent != nil && !IsBlock(s.env.parent.command) && IsBlock(cmd) {
-		panic("Cannot have block command inside inline command")
+	if t.env.parent != nil && !IsBlock(t.env.parent.command) && IsBlock(cmd) {
+		t.reportRuntimeError("cannot have block command inside inline command")
 	}
 
 	// parse attributes
@@ -278,19 +288,21 @@ func (s *Translator) EnterCommand(ctx *parser.CommandContext) {
 						case attrType:
 							attrsMap[attr.GetName().GetText()] = parsed
 						default:
-							panic("Wrong type: " + ctx.GetText() + " at " + strconv.FormatInt(int64(ctx.GetStart().GetLine()), 10))
+							t.reportRuntimeError(fmt.Sprintf("wrong attribute type for \"%s\"; expected %s, got %s",
+								attr.GetName().GetText(), attrType, reflect.TypeOf(parsed)))
 						}
 					} else {
-						// TODO: better error handling should be implemented
-						panic("Wrong attribute")
+						t.reportRuntimeError("attribute \"" + attr.GetName().GetText() + "\" is undefined")
 					}
 				}
 			}
 		}
 	}
-	s.pushEnv(attrsMap, cmd)
-	s.checkDuplicateId()
-	s.writeHTMLOpenTag()
+	t.pushEnv(attrsMap, cmd)
+	t.checkRef()
+	t.checkDeref()
+	t.checkDuplicateId()
+	t.writeHTMLOpenTag()
 }
 
 func parseAttrValue(s string) interface{} {
@@ -311,58 +323,60 @@ func parseAttrValue(s string) interface{} {
 	return parsed
 }
 
-func (s *Translator) pushEnv(attrsMap map[string]interface{}, cmd string) {
-	s.env = &environment{parent: s.env, vars: attrsMap, command: cmd}
+func (t *Translator) pushEnv(attrsMap map[string]interface{}, cmd string) {
+	t.env = &environment{parent: t.env, vars: attrsMap, command: cmd}
 }
 
 // ExitCommand is called when production command is exited.
-func (s *Translator) ExitCommand(ctx *parser.CommandContext) {
-	s.writeHTMLCloseTag()
+func (t *Translator) ExitCommand(ctx *parser.CommandContext) {
+	t.writeHTMLCloseTag()
 	// pop the environment
-	s.popEnv()
+	t.popEnv()
 }
 
-func (s *Translator) popEnv() {
-	s.env = s.env.parent
+func (t *Translator) popEnv() {
+	t.env = t.env.parent
 }
 
-func (s *Translator) writeHTMLTag(tag bool) {
-
-	s.checkRef()
-	s.checkDeref()
-
-	cmd := s.GetCurrentCommand()
-	openTag, closeTag := GetHtmlTags(cmd, s.env.vars)
+func (t *Translator) writeHTMLTag(tag bool) {
+	cmd := t.GetCurrentCommand()
+	openTag, closeTag := GetHtmlTags(cmd, t.env.vars)
 	if tag {
-		_, _ = s.documentWriter.WriteString(openTag)
+		_, err := t.documentWriter.WriteString(openTag)
+		if err != nil {
+			t.reportRuntimeError(err.Error())
+		}
 	} else {
 
-		_, _ = s.documentWriter.WriteString(closeTag)
+		_, err := t.documentWriter.WriteString(closeTag)
+		if err != nil {
+			t.reportRuntimeError(err.Error())
+		}
 	}
 }
 
-func (s *Translator) writeHTMLOpenTag() {
-	s.writeHTMLTag(true)
+func (t *Translator) writeHTMLOpenTag() {
+	t.writeHTMLTag(true)
 }
 
-func (s *Translator) writeHTMLCloseTag() {
-	s.writeHTMLTag(false)
+func (t *Translator) writeHTMLCloseTag() {
+	t.writeHTMLTag(false)
 }
 
 // EnterVal is called when production val is entered.
-func (s *Translator) EnterVal(ctx *parser.ValContext) {}
+func (t *Translator) EnterVal(ctx *parser.ValContext) {}
 
 // ExitVal is called when production val is exited.
-func (s *Translator) ExitVal(ctx *parser.ValContext) {}
+func (t *Translator) ExitVal(ctx *parser.ValContext) {}
 
 // EnterAttr is called when production attr is entered.
-func (s *Translator) EnterAttr(ctx *parser.AttrContext) {}
+func (t *Translator) EnterAttr(ctx *parser.AttrContext) {}
 
 // ExitAttr is called when production attr is exited.
-func (s *Translator) ExitAttr(ctx *parser.AttrContext) {}
+func (t *Translator) ExitAttr(ctx *parser.AttrContext) {}
 
 // EnterAttrs is called when production attrsTypes is entered.
-func (s *Translator) EnterAttrs(ctx *parser.AttrsContext) {}
+func (t *Translator) EnterAttrs(ctx *parser.AttrsContext) {}
 
 // ExitAttrs is called when production attrsTypes is exited.
-func (s *Translator) ExitAttrs(ctx *parser.AttrsContext) {}
+func (t *Translator) ExitAttrs(ctx *parser.AttrsContext) {}

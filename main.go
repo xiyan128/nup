@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"os"
+	"xiyan.life/nup/errhandler"
 	"xiyan.life/nup/parser"
 	"xiyan.life/nup/translator"
 )
@@ -13,14 +15,18 @@ func main() {
 		`
 \title{Nup, a markup language for the web}
 
-\bf[id="first"]{this is the start of a \ref[to="q1"]{new chapter}}
+\bf[id="123"]{this is the start of a \ref[to="q1"]{new chapter}}
+
+\para[id="124"]{haha}Qawae
+
+\deref[id="q1"]{q1}
 
 Let's write some latex: $x^2 + y^2 = z^2$. This conclusion is drawn from \ref[to="q2"]{this equation}
 
 \heading{this is a heading}
 
 \quote[cite="https://google.com"]{
-This is really cool, \it{isn't it?}\ref[to="q1"]{}
+This is really cool, \it{isn't it?}\ref[to="1s1"]{}
 \deref[id="q2"]{$\frac{1}{2} \int_2 x^2 dx$}
 
 This is a second paragraph in the quote, 
@@ -30,7 +36,7 @@ This, however, is a new paragraph.
 }
 
 \para{a para}
-\deref[id="q1"]{this ` + "`function`" + ` is been referenced}
+\deref[id="1s1"]{this ` + "`function`" + ` is been referenced}
 
 another para
 
@@ -46,15 +52,24 @@ func main() {
 }` + "```" + `
 nea \para{dsa}
 `)
+	errorHandler := &errhandler.NupErrorListener{}
 	lexer := parser.NewNupLexer(is)
+	lexer.RemoveErrorListeners()
+	lexer.AddErrorListener(errorHandler)
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 
 	p := parser.NewNupParser(stream)
+	p.RemoveErrorListeners()
+	p.AddErrorListener(errorHandler)
 
 	// write to file
 	f, _ := os.Create("output.html")
 	w := bufio.NewWriter(f)
 
-	antlr.ParseTreeWalkerDefault.Walk(translator.NewNupListener(w), p.Document())
+	antlr.ParseTreeWalkerDefault.Walk(translator.NewNupListener(w, errorHandler), p.Document())
 	w.Flush()
+
+	for _, err := range errorHandler.Errors {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+	}
 }
