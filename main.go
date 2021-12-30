@@ -5,6 +5,7 @@ import (
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"os"
 	"xiyan.life/nup/parser"
+	"xiyan.life/nup/translator"
 )
 
 func main() {
@@ -54,6 +55,6 @@ nea \para{dsa}
 	f, _ := os.Create("output.html")
 	w := bufio.NewWriter(f)
 
-	antlr.ParseTreeWalkerDefault.Walk(NewNupListener(w), p.Document())
+	antlr.ParseTreeWalkerDefault.Walk(translator.NewNupListener(w), p.Document())
 	w.Flush()
 }

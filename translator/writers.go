@@ -1,6 +1,7 @@
-package main
+package translator
 
 import (
+	"github.com/yosssi/gohtml"
 	"io"
 	"strings"
 )
@@ -54,6 +55,11 @@ func (H HtmlWriter) WritePostamble() (n int, err error) {
 }
 
 func (H HtmlWriter) Flush(writer io.Writer) (n int, err error) {
-	n, err = writer.Write([]byte(H.String()))
+	gohtml.Condense = true
+	gohtml.LineWrapColumn = 80
+	gohtml.InlineTags["b"] = true
+	gohtml.InlineTags["i"] = true
+	gohtml.InlineTags["sup"] = true
+	n, err = writer.Write([]byte(gohtml.Format(H.String())))
 	return
 }

@@ -1,4 +1,4 @@
-package main
+package translator
 
 import (
 	"fmt"
@@ -6,19 +6,15 @@ import (
 	"strings"
 )
 
-// define a map of command and attributes
-
-type HtmlTarget struct {
-	_htmlOpenTag  string
-	_htmlCloseTag string
-}
-
+// BaseCommand is an "interface" common to all commands; it defines the most
+// common attributes that all commands must have
 type BaseCommand struct {
-	HtmlTarget
+	_HtmlTarget
 	name string
 	id   string `html:"id"`
 }
 
+// BlockCommand signifies the command can have nested block commands
 type BlockCommand struct {
 	blockId string
 }
@@ -27,120 +23,149 @@ type MathCommand struct {
 	mathId string
 }
 
+// every element in structs that starts with an underscore is not an attribute definition,
+// but rather hold concrete information about the command; usually, they are the
+// fields with actual values
+type _HtmlTarget struct {
+	htmlOpenTag  string
+	htmlCloseTag string
+}
+
+// Enum of all commands
+const (
+	Strong      = "bf"
+	Italic      = "it"
+	InlineCode  = "`"
+	InlineMath  = "$"
+	Link        = "href"
+	Reference   = "ref"
+	Dereference = "deref"
+	Paragraph   = "para"
+	Quote       = "quote"
+	Math        = "$$"
+	Code        = "```"
+	Figure      = "figure"
+	Box         = "box"
+	Title       = "title"
+	Subtitle    = "subtitle"
+	Heading     = "heading"
+)
+
 var commands = map[string]interface{}{
 	// Strong
-	"bf": struct{ BaseCommand }{
+	Strong: struct{ BaseCommand }{
 		BaseCommand{
-			HtmlTarget: HtmlTarget{`<b{{.attrs}}>`, `</b>`},
+			_HtmlTarget: _HtmlTarget{`<b{{.attrs}}>`, `</b>`},
 		},
 	},
 	// Italic
-	"it": struct{ BaseCommand }{
+	Italic: struct{ BaseCommand }{
 		BaseCommand{
-			HtmlTarget: HtmlTarget{`<i{{.attrs}}>`, `</i>`},
+			_HtmlTarget: _HtmlTarget{`<i{{.attrs}}>`, `</i>`},
 		},
 	},
 	// inline code
 	// for now, attributes are not supported
-	"`": struct{ BaseCommand }{
+	InlineCode: struct{ BaseCommand }{
 		BaseCommand{
-			HtmlTarget: HtmlTarget{`<code{{.attrs}}>`, `</code>`},
+			_HtmlTarget: _HtmlTarget{`<code{{.attrs}}>`, `</code>`},
 		},
 	},
 	// inline math
 	// for now, attributes are not supported
-	"$": struct {
+	InlineMath: struct {
 		BaseCommand
 		MathCommand
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  `<span{{.attrs}}>\(`,
-				_htmlCloseTag: `\)</span>`,
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  `<span{{.attrs}}>\(`,
+				htmlCloseTag: `\)</span>`,
 			}},
 	},
 	// link
-	"href": struct {
+	Link: struct {
 		BaseCommand
 		to string `html:"href"`
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  `<a{{.attrs}}>`,
-				_htmlCloseTag: `</a>`,
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  `<a{{.attrs}}>`,
+				htmlCloseTag: `</a>`,
 			},
 		},
 	},
 	// reference
-	"ref": struct {
+	Reference: struct {
 		BaseCommand
 		refNum int
 		to     string
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  `<span{{.attrs}}>`,
-				_htmlCloseTag: `<a href="#{{.to}}"><sup>{{.refNum}}</sup></a></span>`,
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  `<span{{.attrs}}>`,
+				htmlCloseTag: `<a href="#{{.to}}"><sup>{{.refNum}}</sup></a></span>`,
 			},
 		},
 	},
 	// dereference
-	"deref": struct {
+	Dereference: struct {
 		BaseCommand
 		refNum int
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  "<span{{.attrs}}><sup>{{.refNum}}</sup>",
-				_htmlCloseTag: "</span>",
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  "<span{{.attrs}}><sup>{{.refNum}}</sup>",
+				htmlCloseTag: "</span>",
 			},
 		},
 	},
 	// paragraph
-	"para": struct {
+	Paragraph: struct {
 		BaseCommand
 		BlockCommand
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{`<div{{.attrs}}>`, `</div>`},
+			_HtmlTarget: _HtmlTarget{`<div{{.attrs}}>`, `</div>`},
 		},
 	},
 	// quote
-	"quote": struct {
+	Quote: struct {
 		BaseCommand
 		BlockCommand
 		cite string `html:"cite"`
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  "<blockquote{{.attrs}}>",
-				_htmlCloseTag: "</blockquote>",
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  "<blockquote{{.attrs}}>",
+				htmlCloseTag: "</blockquote>",
 			},
 		},
 	},
 	// math block
 	// for not, attributes are not supported
-	"$$": struct {
+	Math: struct {
 		BaseCommand
 		MathCommand
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{`<div{{.attrs}}>$$`, `$$</div>`},
+			_HtmlTarget: _HtmlTarget{`<div{{.attrs}}>$$`, `$$</div>`},
 		},
 	},
 	// code block
-	"```": struct {
+	Code: struct {
 		BaseCommand
 		lang string `html:"data-lang"`
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  "<pre><code{{.attrs}}>",
-				_htmlCloseTag: "</code></pre>",
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  "<pre><code{{.attrs}}>",
+				htmlCloseTag: "</code></pre>",
 			},
 		},
 	},
-	"figure": struct {
+	// figure
+	Figure: struct {
 		BaseCommand
 		BlockCommand
 		src    string `html:"src"`
@@ -149,61 +174,62 @@ var commands = map[string]interface{}{
 		align  string `html:"data-align"`
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  "<figure><img{{.attrs}}/><figcaption>",
-				_htmlCloseTag: "</figcaption></figure>",
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  "<figure><img{{.attrs}}/><figcaption>",
+				htmlCloseTag: "</figcaption></figure>",
 			},
 		},
 	},
 	// box
-	"box": struct {
+	Box: struct {
 		BaseCommand
 		BlockCommand
 		title string
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  "<div{{.attrs}}>{{if .title}}<div>{{.title}}</div>{{end}}",
-				_htmlCloseTag: "</div>",
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  "<div{{.attrs}}>{{if .title}}<div>{{.title}}</div>{{end}}",
+				htmlCloseTag: "</div>",
 			},
 		},
 	},
-	"title": struct {
+	Title: struct {
 		BaseCommand
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  "<h1{{.attrs}}>",
-				_htmlCloseTag: "</h3>",
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  "<h1{{.attrs}}>",
+				htmlCloseTag: "</h1>",
 			},
 		},
 	},
-	"subtitle": struct {
+	Subtitle: struct {
 		BaseCommand
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  "<h2{{.attrs}}>",
-				_htmlCloseTag: "</h3>",
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  "<h2{{.attrs}}>",
+				htmlCloseTag: "</h2>",
 			},
 		},
 	},
-	"heading": struct {
+	Heading: struct {
 		BaseCommand
 	}{
 		BaseCommand: BaseCommand{
-			HtmlTarget: HtmlTarget{
-				_htmlOpenTag:  "<h3{{.attrs}}>",
-				_htmlCloseTag: "</h3>",
+			_HtmlTarget: _HtmlTarget{
+				htmlOpenTag:  "<h3{{.attrs}}>",
+				htmlCloseTag: "</h3>",
 			},
 		},
 	},
 }
 
+// singleton
 var attrsTypes map[string]map[string]reflect.Type
 
-// Attrs returns the lookup map of the attributes of the command
-func Attrs(command string) (map[string]reflect.Type, bool) {
+// GetAttrTypes returns the lookup map of the attribute types of the command
+func GetAttrTypes(command string) (map[string]reflect.Type, bool) {
 	if attrsTypes == nil {
 		attrsTypes = make(map[string]map[string]reflect.Type)
 		for k, v := range commands {
@@ -217,8 +243,9 @@ func Attrs(command string) (map[string]reflect.Type, bool) {
 	return attrsTypes[command], true
 }
 
+// HasAttr returns if a command has an attribute
 func HasAttr(command string, attr string) (ok bool) {
-	attrs, ok := Attrs(command)
+	attrs, ok := GetAttrTypes(command)
 	if !ok {
 		return false
 	}
@@ -226,10 +253,12 @@ func HasAttr(command string, attr string) (ok bool) {
 	return
 }
 
+// IsBlock returns if a command is a block
 func IsBlock(command string) bool {
 	return HasAttr(command, "blockId") || command == ""
 }
 
+// IsMath returns if a command is a math command
 func IsMath(command string) bool {
 	return HasAttr(command, "mathId")
 }
@@ -241,7 +270,9 @@ func extractFields(value interface{}, res map[string]reflect.Type) []reflect.Val
 		v := ifv.Field(i)
 		switch v.Kind() {
 		case reflect.Struct:
-			fields = append(fields, extractFields(v.Interface(), res)...)
+			if ift.Field(i).IsExported() {
+				fields = append(fields, extractFields(v.Interface(), res)...)
+			}
 		default:
 			res[ift.Field(i).Name] = v.Type()
 			fields = append(fields, v)
@@ -250,47 +281,51 @@ func extractFields(value interface{}, res map[string]reflect.Type) []reflect.Val
 	return fields
 }
 
-func extractHtmlAttrName(command, name string) (tag string, ok bool) {
+func GetHtmlAttrName(command, name string) (tag string, ok bool) {
 	attrs, ok := commands[command]
 	if !ok {
 		return
 	}
-	return extractTag(attrs, name)
+	return extractTagValue(attrs, "html", name)
 }
 
-func extractTag(value interface{}, key string) (htmlAttr string, ok bool) {
+// extractTagValue get the value of a tag
+func extractTagValue(value interface{}, tag, key string) (htmlAttr string, ok bool) {
 
 	ifv, ift := reflect.ValueOf(value), reflect.TypeOf(value)
 	for i := 0; i < ift.NumField(); i++ {
 		v := ifv.Field(i)
 		if f := ift.Field(i); f.Name == key {
-			res := f.Tag.Get("html")
+			res := f.Tag.Get(tag)
 			if res != "" {
 				return f.Tag.Get("html"), true
 			}
 		}
 		if v.Kind() == reflect.Struct {
-			htmlAttr, ok = extractTag(v.Interface(), key)
-			if ok {
-				return
+			if ift.Field(i).IsExported() {
+				htmlAttr, ok = extractTagValue(v.Interface(), tag, key)
+				if ok {
+					return
+				}
 			}
 		}
 	}
 	return "", false
 }
 
+// GetHtmlTags returns the open tag and the close tag based on the commands definitions
 func GetHtmlTags(command string, vars map[string]interface{}) (string, string) {
 
 	if attrs, ok := commands[command]; ok {
 		htmlTarget := reflect.
 			ValueOf(attrs).
 			FieldByName(reflect.TypeOf(BaseCommand{}).Name()).
-			FieldByName(reflect.TypeOf(HtmlTarget{}).Name())
+			FieldByName(reflect.TypeOf(_HtmlTarget{}).Name())
 		op, cl := htmlTarget.Field(0).String(), htmlTarget.Field(1).String()
 		attrsBuilder := strings.Builder{}
 		attrsBuilder.WriteString("")
 		for k, v := range vars {
-			htmlAttrName, ok := extractTag(attrs, k)
+			htmlAttrName, ok := GetHtmlAttrName(command, k)
 			if !ok {
 				// just ignore the attribute because it is probably not defined
 				// for the HTML target
