@@ -1,3 +1,5 @@
+\heading{haha im heading}
+
 \title{Nup, a hybrid markup language for fun}
 
 Have you ever wanted to write a document in a markup language that is simpler \bf{than HTML does}
@@ -5,6 +7,16 @@ Well, you can use Nup. than $\LaTeX$ yet more powerful than \href[to="https://en
 
 \quote{Nup is more than a toy language the author created within 3 days during
 the winter break --- it is a markup language that is both simple and powerful.}
+
+\subtitle{Just testing the second header}
+
+\subtitle{Just testing the third header}
+
+\heading{another heading}
+
+\title{D U M M Y}
+
+\heading{another heading}
 
 For example, you can use inline markup to write \bf{bold text}, \it{italic
 text}, and `inline.code()`. Even inline math like $x^2$ is supported.

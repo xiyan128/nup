@@ -40,57 +40,16 @@ type environment struct {
 	vars    map[string]interface{}
 }
 
-type refCounterEntry struct {
-	count int
-	match bool
-}
-
-type refCounter struct {
-	numRefs int
-	m       map[string]*refCounterEntry
-}
-
-func NewRefCounter() *refCounter {
-	return &refCounter{
-		numRefs: 0,
-		m:       make(map[string]*refCounterEntry),
-	}
-}
-
-func (r *refCounter) addRef(id string) int {
-	if r.m[id] == nil {
-		r.numRefs++
-		r.m[id] = &refCounterEntry{r.numRefs, false}
-	}
-	return r.m[id].count
-}
-
-func (r *refCounter) addDeref(id string) (int, error) {
-	if r.m[id] == nil {
-		return -1, fmt.Errorf("dereferencing unknown id %s", id)
-	}
-	r.m[id].match = true
-	return r.m[id].count, nil
-}
-
-func (r *refCounter) allMatched() error {
-	for id, e := range r.m {
-		if !e.match {
-			return fmt.Errorf("unmatched reference \"%s\" ", id)
-		}
-	}
-	return nil
-}
-
 type Translator struct {
 	*parser.BaseNupParserListener
 	env            *environment
 	documentWriter DocumentWriter
 	writer         io.Writer
-	refCounter     *refCounter
 	idPool         map[string]bool
 	errorHandler   *errhandler.NupErrorListener
 	currCtx        antlr.ParserRuleContext
+	refCounter     *refCounter
+	sectionCounter *sectionCounter
 }
 
 func NewNupListener(writer io.Writer, errorHandler *errhandler.NupErrorListener) *Translator {
@@ -101,6 +60,7 @@ func NewNupListener(writer io.Writer, errorHandler *errhandler.NupErrorListener)
 		refCounter:     NewRefCounter(),
 		idPool:         make(map[string]bool),
 		errorHandler:   errorHandler,
+		sectionCounter: NewSectionCounter(),
 	}
 }
 
@@ -328,12 +288,33 @@ func (t *Translator) EnterCommand(ctx *parser.CommandContext) {
 	t.pushEnv(attrsMap, cmd)
 
 	t.checkImplicitParagraph()
+	t.checkHeaders()
 	t.checkRef()
 	t.checkDeref()
 	t.checkDuplicateId()
 	t.checkRecursiveCommandConstraint()
 	t.checkBlockCommandConstraint()
 	t.writeHTMLOpenTag()
+}
+
+func (t *Translator) checkHeaders() {
+	if ctx, ok := t.currCtx.(*parser.CommandContext); ok && ctx.GetInner() != nil {
+		inner := ctx.GetInner().GetText()
+		switch ctx.GetCmd().GetText() {
+		case Title:
+			t.sectionCounter.AddTitle(inner)
+		case Subtitle:
+			t.sectionCounter.AddSubtitle(inner)
+		case Heading:
+			t.sectionCounter.AddHeading(inner)
+		default:
+			return
+		}
+		if _, ok := t.getAttribute("id"); !ok {
+			t.setAttribute("id", t.sectionCounter.GetSectionId())
+		}
+		t.setAttribute("sectionNum", t.sectionCounter.GetSectionDisplayId())
+	}
 }
 
 func (t *Translator) checkImplicitParagraph() {

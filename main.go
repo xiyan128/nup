@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+
 	// parse command line arguments
 	if len(os.Args) < 3 {
 		fmt.Fprintln(os.Stderr, "Usage: nup <input file> <output file>")

@@ -246,7 +246,7 @@ main {
         background-color: $blue;
         color: $light;
     }
-    a.hnum {
+    a.section-num {
         flex-grow: 0;
         -webkit-flex-grow: 0;
         flex-shrink: 0;
@@ -276,7 +276,7 @@ main {
         border: 1px solid $grey;
         border-radius: 50%;
     }
-    a.hnum:hover, a.hnum:focus, a.fignum:hover, a.fignum:focus, a.eqnum:hover, a.eqnum:focus {
+    a.section-num:hover, a.section-num:focus, a.fignum:hover, a.fignum:focus, a.eqnum:hover, a.eqnum:focus {
         color: $light;
         background-color: $grey;
     }

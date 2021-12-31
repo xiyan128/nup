@@ -205,7 +205,7 @@ var commands = map[string]interface{}{
 		_HtmlTarget
 	}{
 		_HtmlTarget: _HtmlTarget{
-			htmlOpenTag:  "<h1{{.attrs}}>",
+			htmlOpenTag:  `<h1{{.attrs}}><a class="section-num">{{.sectionNum}}</a>`,
 			htmlCloseTag: "</h1>",
 		},
 	},
@@ -215,7 +215,7 @@ var commands = map[string]interface{}{
 		_HtmlTarget
 	}{
 		_HtmlTarget: _HtmlTarget{
-			htmlOpenTag:  "<h2{{.attrs}}>",
+			htmlOpenTag:  `<h2{{.attrs}}><a class="section-num">{{.sectionNum}}</a>`,
 			htmlCloseTag: "</h2>",
 		},
 	},
@@ -225,7 +225,7 @@ var commands = map[string]interface{}{
 		_HtmlTarget
 	}{
 		_HtmlTarget: _HtmlTarget{
-			htmlOpenTag:  "<h3{{.attrs}}>",
+			htmlOpenTag:  `<h3{{.attrs}}><a class="section-num">{{.sectionNum}}</a>`,
 			htmlCloseTag: "</h3>",
 		},
 	},
