@@ -26,7 +26,7 @@ STR: '"' (~[\\"])* '"';
 fragment DIGIT   :   ('0'..'9');
 NUMBER: ('0'..'9')+ ('.' ('0'..'9')+)?;
 BOOLEAN: 'true' | 'false';
-ALPHANUMERIC: [a-zA-Z0-9_]+;
+ALPHANUMERIC: [a-zA-Z0-9]+;
 SNL: ('\r\n' | '\r' | '\n')  -> popMode, pushMode(CODE);
 
 mode MATH;

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"hash"
+	"html"
 	"io"
 	"reflect"
 	"strconv"
@@ -93,7 +94,7 @@ type Translator struct {
 func NewNupListener(writer io.Writer, errorHandler *errhandler.NupErrorListener) *Translator {
 	return &Translator{
 		documentWriter: NewHtmlWriter(),
-		env:            &environment{vars: make(map[string]interface{})},
+		env:            &environment{command: Document, vars: make(map[string]interface{})},
 		writer:         writer,
 		refCounter:     NewRefCounter(),
 		idPool:         make(map[string]bool),
@@ -161,6 +162,17 @@ func (t *Translator) checkDuplicateId() {
 	}
 }
 
+func (t *Translator) checkBlockCommandConstraint() {
+	if cmd := t.GetCurrentCommand(); IsBlock(cmd) {
+		if val, ok := t.currCtx.
+			GetParent().GetParent().(*parser.BlockContext).
+			GetChild(0).(*parser.ContentContext).
+			GetChild(0).(*parser.CommandContext); !(ok && val == t.currCtx) {
+			t.reportRuntimeError(fmt.Sprintf("block command \"%s\" must be the first element of a block", cmd))
+		}
+	}
+}
+
 // VisitTerminal is called when a terminal node is visited.
 func (t *Translator) VisitTerminal(node antlr.TerminalNode) {}
 
@@ -217,13 +229,14 @@ func (t *Translator) ExitDocument(ctx *parser.DocumentContext) {
 
 // EnterBlock is called when production block is entered.
 func (t *Translator) EnterBlock(ctx *parser.BlockContext) {
-
-	// if the outer command is a block, or it is the outermost command, the inner command is implicitly a paragraph
-	cmd := t.GetCurrentCommand()
-	if (IsBlock(cmd) && cmd != Paragraph) || (cmd == "" && t.env.parent == nil) {
+	// if the block is not a direct child of a command, it is implicitly a paragraph
+	if val, ok := t.getAttribute("_command_block"); ok && val.(bool) {
+		// signal that the next block is no longer the child of a command
+		t.setAttribute("_command_block", false)
+		// if the child command is already a block, we don't need to wrap it in a paragraph
+	} else if c, ok := ctx.GetChild(0).GetChild(0).(*parser.CommandContext); !ok || (ok && !IsBlock(c.GetCmd().GetText())) {
 		t.pushEnv(map[string]interface{}{"_implicit_para": true}, Paragraph)
-	}
-	if t.env.vars["_implicit_para"] != nil {
+		t.checkRecursiveCommandConstraint()
 		t.writeHTMLOpenTag()
 	}
 }
@@ -231,7 +244,6 @@ func (t *Translator) EnterBlock(ctx *parser.BlockContext) {
 // ExitBlock is called when production block is exited.
 func (t *Translator) ExitBlock(ctx *parser.BlockContext) {
 	if t.env.vars["_implicit_para"] != nil {
-		//t.env = t.env.parent
 		t.writeHTMLCloseTag()
 		t.popEnv()
 	}
@@ -245,7 +257,7 @@ func (t *Translator) ExitContent(ctx *parser.ContentContext) {}
 
 // EnterText is called when production text is entered.
 func (t *Translator) EnterText(ctx *parser.TextContext) {
-	_, err := t.documentWriter.WriteString(ctx.GetText())
+	_, err := t.documentWriter.WriteString(html.EscapeString(ctx.GetText()))
 	if err != nil {
 		return
 	}
@@ -271,11 +283,6 @@ func (t *Translator) EnterCommand(ctx *parser.CommandContext) {
 		t.reportRuntimeError("command \"" + cmd + "\" is undefined")
 	}
 
-	// check if a block command is nested inside an inline command
-	if t.env.parent != nil && !IsBlock(t.env.parent.command) && IsBlock(cmd) {
-		t.reportRuntimeError("cannot have block command inside inline command")
-	}
-
 	// parse attributes
 	attrsMap := make(map[string]interface{})
 	if attrs := ctx.GetAttributes(); attrs != nil {
@@ -299,10 +306,29 @@ func (t *Translator) EnterCommand(ctx *parser.CommandContext) {
 		}
 	}
 	t.pushEnv(attrsMap, cmd)
+
+	t.checkImplicitParagraph()
 	t.checkRef()
 	t.checkDeref()
 	t.checkDuplicateId()
+	t.checkRecursiveCommandConstraint()
+	t.checkBlockCommandConstraint()
 	t.writeHTMLOpenTag()
+}
+
+func (t *Translator) checkImplicitParagraph() {
+	// if the command has only one block, the only child is a command block;
+	// otherwise, it's not.
+	if ctx, ok := t.currCtx.(*parser.CommandContext); ok && ctx.GetInner() != nil && len(ctx.AllBlock()) == 1 {
+		t.setAttribute("_command_block", true)
+	}
+}
+
+func (t *Translator) checkRecursiveCommandConstraint() {
+	// check if a block command is nested inside a non-recursive command
+	if t.env.parent != nil && !IsRecursive(t.env.parent.command) && IsBlock(t.GetCurrentCommand()) {
+		t.reportRuntimeError("cannot have block command inside a non-recursive command")
+	}
 }
 
 func parseAttrValue(s string) interface{} {

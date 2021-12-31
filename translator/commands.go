@@ -9,19 +9,20 @@ import (
 // BaseCommand is an "interface" common to all commands; it defines the most
 // common attributes that all commands must have
 type BaseCommand struct {
-	_HtmlTarget
 	name string
 	id   string `html:"id"`
 }
 
-// BlockCommand signifies the command can have nested block commands
-type BlockCommand struct {
-	blockId string
+// RecursiveCommand signifies the command can have nested block commands
+// a recursive command must be a block command
+type RecursiveCommand struct {
+	BlockCommand
 }
 
-type MathCommand struct {
-	mathId string
-}
+// BlockCommand signifies the command must be the first command in a block
+type BlockCommand struct{}
+
+type MathCommand struct{}
 
 // every element in structs that starts with an underscore is not an attribute definition,
 // but rather hold concrete information about the command; usually, they are the
@@ -33,113 +34,120 @@ type _HtmlTarget struct {
 
 // Enum of all commands
 const (
-	Strong      = "bf"
-	Italic      = "it"
-	InlineCode  = "`"
-	InlineMath  = "$"
-	Link        = "href"
-	Reference   = "ref"
-	Dereference = "deref"
-	Paragraph   = "para"
-	Quote       = "quote"
-	Math        = "$$"
-	Code        = "```"
-	Figure      = "figure"
-	Box         = "box"
-	Title       = "title"
-	Subtitle    = "subtitle"
-	Heading     = "heading"
+	Document      = "_doc"
+	Strong        = "bf"
+	Italic        = "it"
+	InlineCode    = "`"
+	InlineMath    = "$"
+	Link          = "href"
+	Reference     = "ref"
+	Dereference   = "deref"
+	Paragraph     = "para"
+	Quote         = "quote"
+	Math          = "$$"
+	Code          = "```"
+	Figure        = "figure"
+	Box           = "box"
+	Title         = "title"
+	Subtitle      = "subtitle"
+	Heading       = "heading"
+	OrderedList   = "ol"
+	UnorderedList = "ul"
+	ListItem      = "li"
 )
 
 var commands = map[string]interface{}{
+	// Document
+	Document: struct {
+		BaseCommand
+		BlockCommand
+		RecursiveCommand
+	}{},
 	// Strong
-	Strong: struct{ BaseCommand }{
-		BaseCommand{
-			_HtmlTarget: _HtmlTarget{`<b{{.attrs}}>`, `</b>`},
-		},
+	Strong: struct {
+		BaseCommand
+		_HtmlTarget
+	}{
+		_HtmlTarget: _HtmlTarget{`<b{{.attrs}}>`, `</b>`},
 	},
 	// Italic
-	Italic: struct{ BaseCommand }{
-		BaseCommand{
-			_HtmlTarget: _HtmlTarget{`<i{{.attrs}}>`, `</i>`},
-		},
+	Italic: struct {
+		BaseCommand
+		_HtmlTarget
+	}{
+		_HtmlTarget: _HtmlTarget{`<i{{.attrs}}>`, `</i>`},
 	},
 	// inline code
 	// for now, attributes are not supported
-	InlineCode: struct{ BaseCommand }{
-		BaseCommand{
-			_HtmlTarget: _HtmlTarget{`<code{{.attrs}}>`, `</code>`},
-		},
+	InlineCode: struct {
+		BaseCommand
+		_HtmlTarget
+	}{
+		_HtmlTarget: _HtmlTarget{`<code{{.attrs}}>`, `</code>`},
 	},
 	// inline math
 	// for now, attributes are not supported
 	InlineMath: struct {
 		BaseCommand
 		MathCommand
+		_HtmlTarget
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  `<span{{.attrs}}>\(`,
-				htmlCloseTag: `\)</span>`,
-			}},
-	},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  `<span{{.attrs}}>\(`,
+			htmlCloseTag: `\)</span>`,
+		}},
 	// link
 	Link: struct {
 		BaseCommand
+		_HtmlTarget
 		to string `html:"href"`
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  `<a{{.attrs}}>`,
-				htmlCloseTag: `</a>`,
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  `<a{{.attrs}}>`,
+			htmlCloseTag: `</a>`,
 		},
 	},
 	// reference
 	Reference: struct {
 		BaseCommand
+		_HtmlTarget
 		refNum int
 		to     string
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  `<span{{.attrs}}>`,
-				htmlCloseTag: `<a href="#{{.to}}"><sup>{{.refNum}}</sup></a></span>`,
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  `<span{{.attrs}}>`,
+			htmlCloseTag: `<a href="#{{.to}}"><sup>{{.refNum}}</sup></a></span>`,
 		},
 	},
 	// dereference
 	Dereference: struct {
 		BaseCommand
+		_HtmlTarget
 		refNum int
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  "<span{{.attrs}}><sup>{{.refNum}}</sup>",
-				htmlCloseTag: "</span>",
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<span{{.attrs}}><sup>{{.refNum}}</sup>",
+			htmlCloseTag: "</span>",
 		},
 	},
 	// paragraph
 	Paragraph: struct {
 		BaseCommand
-		BlockCommand
+		RecursiveCommand
+		_HtmlTarget
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{`<div{{.attrs}}>`, `</div>`},
-		},
+		_HtmlTarget: _HtmlTarget{`<div{{.attrs}}>`, `</div>`},
 	},
 	// quote
 	Quote: struct {
 		BaseCommand
-		BlockCommand
+		RecursiveCommand
+		_HtmlTarget
 		cite string `html:"cite"`
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  "<blockquote{{.attrs}}>",
-				htmlCloseTag: "</blockquote>",
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<blockquote{{.attrs}}>",
+			htmlCloseTag: "</blockquote>",
 		},
 	},
 	// math block
@@ -147,80 +155,111 @@ var commands = map[string]interface{}{
 	Math: struct {
 		BaseCommand
 		MathCommand
+		BlockCommand
+		_HtmlTarget
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{`<div{{.attrs}}>$$`, `$$</div>`},
-		},
+		_HtmlTarget: _HtmlTarget{`<div{{.attrs}}>$$`, `$$</div>`},
 	},
 	// code block
 	Code: struct {
 		BaseCommand
+		BlockCommand
+		_HtmlTarget
 		lang string `html:"data-lang"`
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  "<pre><code{{.attrs}}>",
-				htmlCloseTag: "</code></pre>",
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<pre><code{{.attrs}}>",
+			htmlCloseTag: "</code></pre>",
 		},
 	},
 	// figure
 	Figure: struct {
 		BaseCommand
 		BlockCommand
+		_HtmlTarget
 		src    string `html:"src"`
 		width  int    `html:"width"`
 		height int    `html:"height"`
 		align  string `html:"data-align"`
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  "<figure><img{{.attrs}}/><figcaption>",
-				htmlCloseTag: "</figcaption></figure>",
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<figure><img{{.attrs}}/><figcaption>",
+			htmlCloseTag: "</figcaption></figure>",
 		},
 	},
 	// box
 	Box: struct {
 		BaseCommand
-		BlockCommand
+		RecursiveCommand
+		_HtmlTarget
 		title string
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  "<div{{.attrs}}>{{if .title}}<div>{{.title}}</div>{{end}}",
-				htmlCloseTag: "</div>",
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<div{{.attrs}}>{{if .title}}<div>{{.title}}</div>{{end}}",
+			htmlCloseTag: "</div>",
 		},
 	},
 	Title: struct {
 		BaseCommand
+		BlockCommand
+		_HtmlTarget
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  "<h1{{.attrs}}>",
-				htmlCloseTag: "</h1>",
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<h1{{.attrs}}>",
+			htmlCloseTag: "</h1>",
 		},
 	},
 	Subtitle: struct {
 		BaseCommand
+		BlockCommand
+		_HtmlTarget
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  "<h2{{.attrs}}>",
-				htmlCloseTag: "</h2>",
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<h2{{.attrs}}>",
+			htmlCloseTag: "</h2>",
 		},
 	},
 	Heading: struct {
 		BaseCommand
+		BlockCommand
+		_HtmlTarget
 	}{
-		BaseCommand: BaseCommand{
-			_HtmlTarget: _HtmlTarget{
-				htmlOpenTag:  "<h3{{.attrs}}>",
-				htmlCloseTag: "</h3>",
-			},
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<h3{{.attrs}}>",
+			htmlCloseTag: "</h3>",
+		},
+	},
+	OrderedList: struct {
+		BaseCommand
+		RecursiveCommand
+		_HtmlTarget
+	}{
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<ol{{.attrs}}>",
+			htmlCloseTag: "</ol>",
+		},
+	},
+	UnorderedList: struct {
+		BaseCommand
+		RecursiveCommand
+		_HtmlTarget
+	}{
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<ul{{.attrs}}>",
+			htmlCloseTag: "</ul>",
+		},
+	},
+
+	ListItem: struct {
+		BaseCommand
+		RecursiveCommand
+		_HtmlTarget
+		value   int    `html:"value"`
+		numType string `html:"type"`
+	}{
+		_HtmlTarget: _HtmlTarget{
+			htmlOpenTag:  "<li{{.attrs}}>",
+			htmlCloseTag: "</li>",
 		},
 	},
 }
@@ -234,7 +273,7 @@ func GetAttrTypes(command string) (map[string]reflect.Type, bool) {
 		attrsTypes = make(map[string]map[string]reflect.Type)
 		for k, v := range commands {
 			attrsTypes[k] = make(map[string]reflect.Type)
-			extractFields(v, attrsTypes[k])
+			deepExtractField(v, attrsTypes[k])
 		}
 	}
 	if attrsTypes[command] == nil {
@@ -253,17 +292,45 @@ func HasAttr(command string, attr string) (ok bool) {
 	return
 }
 
+func IsCommand(command string, baseCommand interface{}) bool {
+	if def, ok := commands[command]; ok {
+		return embedsBaseModel(def, baseCommand)
+	}
+	return false
+}
+
+func embedsBaseModel(v interface{}, baseType interface{}) bool {
+	rt := reflect.TypeOf(v)
+	if rt.Kind() != reflect.Struct {
+		return false
+	}
+	for i := 0; i < rt.NumField(); i++ {
+		if sf := rt.Field(i); sf.Type == reflect.TypeOf(baseType) && sf.Anonymous {
+			return true
+		} else if sub := reflect.ValueOf(v).Field(i); sf.IsExported() && sub.Kind() == reflect.Struct {
+			if embedsBaseModel(sub.Interface(), baseType) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // IsBlock returns if a command is a block
 func IsBlock(command string) bool {
-	return HasAttr(command, "blockId") || command == ""
+	return IsCommand(command, BlockCommand{})
 }
 
 // IsMath returns if a command is a math command
 func IsMath(command string) bool {
-	return HasAttr(command, "mathId")
+	return IsCommand(command, MathCommand{})
 }
 
-func extractFields(value interface{}, res map[string]reflect.Type) []reflect.Value {
+func IsRecursive(command string) bool {
+	return IsCommand(command, RecursiveCommand{})
+}
+
+func deepExtractField(value interface{}, res map[string]reflect.Type) []reflect.Value {
 	fields := make([]reflect.Value, 0)
 	ifv, ift := reflect.ValueOf(value), reflect.TypeOf(value)
 	for i := 0; i < ift.NumField(); i++ {
@@ -271,7 +338,7 @@ func extractFields(value interface{}, res map[string]reflect.Type) []reflect.Val
 		switch v.Kind() {
 		case reflect.Struct:
 			if ift.Field(i).IsExported() {
-				fields = append(fields, extractFields(v.Interface(), res)...)
+				fields = append(fields, deepExtractField(v.Interface(), res)...)
 			}
 		default:
 			res[ift.Field(i).Name] = v.Type()
@@ -319,7 +386,6 @@ func GetHtmlTags(command string, vars map[string]interface{}) (string, string) {
 	if attrs, ok := commands[command]; ok {
 		htmlTarget := reflect.
 			ValueOf(attrs).
-			FieldByName(reflect.TypeOf(BaseCommand{}).Name()).
 			FieldByName(reflect.TypeOf(_HtmlTarget{}).Name())
 		op, cl := htmlTarget.Field(0).String(), htmlTarget.Field(1).String()
 		attrsBuilder := strings.Builder{}

@@ -1,6 +1,7 @@
 \title{Nup, a hybrid markup language for fun}
 
-Have you ever wanted to write a document in a markup language that is simpler
+Have you ever wanted to write a document in a markup language that is
+simpler
 than $\LaTeX$ yet more powerful than \href[to="https://en.wikipedia.org/wiki/Markdown"]{Markdown}? Well, Nup is for you.
 
 \quote{Nup is more than a toy language the author created within 3 days during
@@ -23,6 +24,30 @@ And math blocks like this:
 $$
 x^2 + y^2 = z^2
 $$
+
+\ol{
+    \li[value=10]{Nup is a markup language. it is inspired}
+
+    \li[numType="I"]{Nup is not a markup language.}
+
+
+    \ol{\li{Nup is a markup language.}}
+}
+
+\para{
+a
+
+b
+}
+
+\para{
+Block
+
+\quote{another block}
+}
+
+\para{
+Blockaaa}
 
 More features are coming soon!
 
