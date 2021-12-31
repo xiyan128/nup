@@ -2,7 +2,7 @@ parser grammar NupParser;
 
 options { tokenVocab=NupLexer; }
 
-newLine: NL;
+newLine: NL | MANL | CANL;
 blankLines: newLine newLine+;
 
 
@@ -14,11 +14,14 @@ content: command | text;
 
 text: TEXT | MTEXT | CTEXT;
 identifier: ALPHANUMERIC+;
-command: cmd=DOLLARS text MDOLLARS
+openBracket: (OPEN_BRACKET | CABRACKET | MABRACKET);
+openBrace: (OPEN_BRACE | SOPEN_BRACE);
+command:
+      cmd=DOLLARS attributes=attrs? newLine text MDOLLARS
     | cmd=DOLLAR text MDOLLAR
+    | cmd=GRAVES attributes=attrs? newLine text CGRAVES
     | cmd=GRAVE text CGRAVE
-    | cmd=GRAVES attributes=attrs? SNL text CGRAVES
-    | BACKSLASH cmd=ALPHANUMERIC+ attributes=attrs? OPEN_BRACE newLine* (inner=block (blankLines inner=block)*)? newLine* CLOSE_BRACE;
+    | BACKSLASH cmd=ALPHANUMERIC+ attributes=attrs? openBrace newLine* (inner=block (blankLines inner=block)*)? newLine* CLOSE_BRACE;
 val: (STR | NUMBER | BOOLEAN);
 attr :  name=identifier EQUALS value=val;
-attrs: OPEN_BRACKET value=val CLOSE_BRACKET | OPEN_BRACKET (attribute=attr (COMMA attribute=attr) *)? CLOSE_BRACKET;
+attrs: openBracket (attribute=attr (COMMA attribute=attr) *)? CLOSE_BRACKET;

@@ -29,6 +29,12 @@ type NupParserListener interface {
 	// EnterIdentifier is called when entering the identifier production.
 	EnterIdentifier(c *IdentifierContext)
 
+	// EnterOpenBracket is called when entering the openBracket production.
+	EnterOpenBracket(c *OpenBracketContext)
+
+	// EnterOpenBrace is called when entering the openBrace production.
+	EnterOpenBrace(c *OpenBraceContext)
+
 	// EnterCommand is called when entering the command production.
 	EnterCommand(c *CommandContext)
 
@@ -61,6 +67,12 @@ type NupParserListener interface {
 
 	// ExitIdentifier is called when exiting the identifier production.
 	ExitIdentifier(c *IdentifierContext)
+
+	// ExitOpenBracket is called when exiting the openBracket production.
+	ExitOpenBracket(c *OpenBracketContext)
+
+	// ExitOpenBrace is called when exiting the openBrace production.
+	ExitOpenBrace(c *OpenBraceContext)
 
 	// ExitCommand is called when exiting the command production.
 	ExitCommand(c *CommandContext)

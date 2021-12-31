@@ -151,7 +151,6 @@ var commands = map[string]interface{}{
 		},
 	},
 	// math block
-	// for not, attributes are not supported
 	Math: struct {
 		BaseCommand
 		MathCommand

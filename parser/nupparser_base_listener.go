@@ -63,6 +63,18 @@ func (s *BaseNupParserListener) EnterIdentifier(ctx *IdentifierContext) {}
 // ExitIdentifier is called when production identifier is exited.
 func (s *BaseNupParserListener) ExitIdentifier(ctx *IdentifierContext) {}
 
+// EnterOpenBracket is called when production openBracket is entered.
+func (s *BaseNupParserListener) EnterOpenBracket(ctx *OpenBracketContext) {}
+
+// ExitOpenBracket is called when production openBracket is exited.
+func (s *BaseNupParserListener) ExitOpenBracket(ctx *OpenBracketContext) {}
+
+// EnterOpenBrace is called when production openBrace is entered.
+func (s *BaseNupParserListener) EnterOpenBrace(ctx *OpenBraceContext) {}
+
+// ExitOpenBrace is called when production openBrace is exited.
+func (s *BaseNupParserListener) ExitOpenBrace(ctx *OpenBraceContext) {}
+
 // EnterCommand is called when production command is entered.
 func (s *BaseNupParserListener) EnterCommand(ctx *CommandContext) {}
 
