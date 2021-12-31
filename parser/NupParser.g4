@@ -12,7 +12,6 @@ block: (content newLine? content?)+;
 
 content: command | text;
 
-language: LANGUAGE;
 text: TEXT | MTEXT | CTEXT;
 identifier: ALPHANUMERIC+;
 command: cmd=DOLLARS text MDOLLARS

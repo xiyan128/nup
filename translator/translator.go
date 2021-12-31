@@ -9,6 +9,8 @@ import (
 	"io"
 	"reflect"
 	"strconv"
+	"strings"
+	"unicode"
 	"xiyan.life/nup/errhandler"
 	"xiyan.life/nup/parser"
 )
@@ -188,7 +190,25 @@ func (t *Translator) EnterEveryRule(ctx antlr.ParserRuleContext) {
 func (t *Translator) ExitEveryRule(ctx antlr.ParserRuleContext) {}
 
 // EnterNewLine is called when production newLine is entered.
-func (t *Translator) EnterNewLine(ctx *parser.NewLineContext) {}
+func (t *Translator) EnterNewLine(ctx *parser.NewLineContext) {
+	// insert spaces between two consecutive lines if there isn't one yet
+	if p, ok := ctx.GetParent().(*parser.BlockContext); ok {
+		i := 0
+		for ; i < p.GetChildCount() && p.GetChild(i) != ctx; i++ {
+		}
+		if i > 0 {
+			if c, ok := p.GetChild(i - 1).(*parser.ContentContext); ok {
+				text := c.GetText()
+				trimmed := strings.TrimRight(text, " }")
+				last := rune(trimmed[len(trimmed)-1])
+				// check if the last character is a letter
+				if (unicode.IsLetter(last) || unicode.IsPunct(last)) && text[len(text)-1] != ' ' {
+					t.documentWriter.WriteString(" ")
+				}
+			}
+		}
+	}
+}
 
 // ExitNewLine is called when production newLine is exited.
 func (t *Translator) ExitNewLine(ctx *parser.NewLineContext) {}

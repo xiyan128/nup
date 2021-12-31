@@ -116,7 +116,7 @@ var commands = map[string]interface{}{
 	}{
 		_HtmlTarget: _HtmlTarget{
 			htmlOpenTag:  `<span{{.attrs}}>`,
-			htmlCloseTag: `<a href="#{{.to}}"><sup>{{.refNum}}</sup></a></span>`,
+			htmlCloseTag: `<a href="#{{.to}}" class="refname">{{.refNum}}</a></span>`,
 		},
 	},
 	// dereference
@@ -126,7 +126,7 @@ var commands = map[string]interface{}{
 		refNum int
 	}{
 		_HtmlTarget: _HtmlTarget{
-			htmlOpenTag:  "<span{{.attrs}}><sup>{{.refNum}}</sup>",
+			htmlOpenTag:  `<span{{.attrs}}><a class="refname" >{{.refNum}}</a>`,
 			htmlCloseTag: "</span>",
 		},
 	},
@@ -165,10 +165,10 @@ var commands = map[string]interface{}{
 		BaseCommand
 		BlockCommand
 		_HtmlTarget
-		lang string `html:"data-lang"`
+		lang string
 	}{
 		_HtmlTarget: _HtmlTarget{
-			htmlOpenTag:  "<pre><code{{.attrs}}>",
+			htmlOpenTag:  `<pre><code{{.attrs}} class="language-{{or .lang "plain"}}">`,
 			htmlCloseTag: "</code></pre>",
 		},
 	},
@@ -195,7 +195,7 @@ var commands = map[string]interface{}{
 		title string
 	}{
 		_HtmlTarget: _HtmlTarget{
-			htmlOpenTag:  "<div{{.attrs}}>{{if .title}}<div>{{.title}}</div>{{end}}",
+			htmlOpenTag:  `<div{{.attrs}} class="box">{{if .title}}<div class="box-title">{{.title}}</div>{{end}}`,
 			htmlCloseTag: "</div>",
 		},
 	},

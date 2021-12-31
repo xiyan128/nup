@@ -1,11 +1,23 @@
 JAVA := /usr/bin/java
 antlr := lib/antlr-4.9-complete.jar
+sassc := lib/sassc
+OUTPUT_DIR := dist
+input := changeme.nup
+output := changeme.html
 
-build: grammar
+build-go: build-grammar
 	@echo "Building binary..."
-	go build -o dist/nup
+	go build -o nup
 
-grammar:
+build-grammar: ./parser/NupLexer.g4 ./parser/NupParser.g4
 	@echo "Compiling grammar..."
 	$(JAVA) -jar $(antlr) -Dlanguage=Go -o . parser/NupLexer.g4
 	$(JAVA) -jar $(antlr) -Dlanguage=Go -o . parser/NupParser.g4
+
+build-css : css/index.scss css/_reset.scss
+	@echo "Compiling SCSS..."
+	$(sassc) -t compressed css/index.scss > $(OUTPUT_DIR)/index.css
+
+generate-html: build-go build-css
+	@echo "Generating HTML"
+	./nup "$(input)" "$(OUTPUT_DIR)/$(output)"

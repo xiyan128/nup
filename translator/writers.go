@@ -28,8 +28,12 @@ func (H HtmlWriter) WritePreamble() (n int, err error) {
 <!DOCTYPE html>
 <html lang="en">
   <head>
+
 	<title>Page Title</title>
+
 	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta charset="UTF-8">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css" integrity="sha384-R4558gYOUz8mP9YWpZJjofhk+zx0AS11p36HnD2ZKj/6JR5z27gSSULCNHIRReVs" crossorigin="anonymous">
 
     <!-- The loading of KaTeX is deferred to speed up page rendering -->
@@ -38,16 +42,20 @@ func (H HtmlWriter) WritePreamble() (n int, err error) {
     <!-- To automatically render math in text elements, include the auto-render extension: -->
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous"
         onload="renderMathInElement(document.body);"></script>
+	<link rel="stylesheet" href="index.css">
   </head>
-<meta charset="UTF-8">
 
 <body>
+	<main>
 `)
 	return
 }
 
 func (H HtmlWriter) WritePostamble() (n int, err error) {
 	n, err = H.WriteString(`
+	</main>
+	<script src="https://unpkg.com/prismjs@1.25.0/components/prism-core.min.js"></script>
+	<script src="https://unpkg.com/prismjs@1.25.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </body>
 </html> 
 `)
