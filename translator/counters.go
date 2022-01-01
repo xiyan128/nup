@@ -57,13 +57,16 @@ type sectionCounter struct {
 	headings map[int]map[int]map[int]string
 	// 	      a.b.c => headings[a][b][c]
 	section [3]int
+
+	captionNums map[string]int
 }
 
 func NewSectionCounter() *sectionCounter {
 	return &sectionCounter{
-		titles:    make(map[int]string),
-		subtitles: make(map[int]map[int]string),
-		headings:  make(map[int]map[int]map[int]string),
+		titles:      make(map[int]string),
+		subtitles:   make(map[int]map[int]string),
+		headings:    make(map[int]map[int]map[int]string),
+		captionNums: make(map[string]int),
 	}
 }
 
@@ -118,4 +121,12 @@ func (c *sectionCounter) AddHeading(heading string) {
 
 func (c *sectionCounter) GetHeadingNum() int {
 	return c.section[2]
+}
+
+func (c *sectionCounter) AddCaptionedCommand(cmd string) {
+	c.captionNums[cmd+c.GetSectionDisplayId()]++
+}
+
+func (c *sectionCounter) GetCaptionNum(cmd string) int {
+	return c.captionNums[cmd+c.GetSectionDisplayId()]
 }

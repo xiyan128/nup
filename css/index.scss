@@ -201,13 +201,13 @@ main {
         font-weight: 600;
         font-size: 1.3em;
         line-height: 1em;
-        margin-top: 1em;
+        margin: 1em 0 0.4em 0;
     }
     h3 {
         font-weight: 900;
         font-size: 1em;
         line-height: 1em;
-        margin-top: 1em;
+        margin: 1em 0 0.3em 0;
         text-transform: uppercase;
         letter-spacing: 0.1em;
     }
@@ -258,28 +258,13 @@ main {
         height: 1.25em;
         line-height: 1.25em;
     }
-    a.fignum {
-        color: $grey;
-        font-weight: 700;
-    }
-    a.eqnum {
-        display: block;
-        position: absolute;
-        color: $grey;
-        top: 0;
-        left: 100%;
-        text-align: center;
-        font-size: 0.7em;
-        height: 2em;
-        width: 2em;
-        line-height: 2em;
-        border: 1px solid $grey;
-        border-radius: 50%;
-    }
-    a.section-num:hover, a.section-num:focus, a.fignum:hover, a.fignum:focus, a.eqnum:hover, a.eqnum:focus {
+    a.section-num:hover, a.section-num:focus {
         color: $light;
         background-color: $grey;
     }
+
+
+
     a.bigbutton {
         display: block;
         margin: auto;
@@ -452,20 +437,59 @@ main {
             }
         }
     }
+
+   .captionable {
+        position: relative;
+        width: 100%;
+    }
+   .caption-num {
+        font-size: 0.8em;
+        color: $grey;
+        font-weight: 700;
+        &:hover, &:focus {
+            background-color: $grey;
+            color: $light;
+        }
+    }
+    .caption {
+        color: $grey;
+        font-size: 0.7em;
+    }
+    .math-block {
+        position: relative;
+        width: 100%;
+        .math-num {
+            &::before {
+                content: "("
+            }
+            &::after {
+                content: ")"
+            }
+            &:hover, &:focus {
+                background-color: $grey;
+                color: $light;
+            }
+            display: block;
+            position: absolute;
+            color: #404e62;
+            top: 0;
+            left: 100%;
+            text-align: center;
+            font-size: 0.8em;
+            font-weight: 700;
+            margin-left: 16px;
+        }
+    }
 }
 
 @media all and (min-width: 1200px) {
     main {
-        figcaption {
+        .caption-wrapper {
             position: absolute;
             top: 0px;
             left: 100%;
-            padding-left: 20px;
+            padding-left: 16px;
             width: 280px;
-        }
-        .fignum {
-            display: block;
-            margin-bottom: 0.5em;
         }
         .toc {
             position: fixed;
@@ -484,13 +508,8 @@ main {
 
 @media all and (max-width: 1199px) {
     main {
-        figcaption {
+        .caption-wrapper  {
             position: relative;
-            padding: 1em 2em;
-        }
-        .fignum {
-            display: inline-block;
-            margin-right: 1em;
         }
     }
 }

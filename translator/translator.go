@@ -13,6 +13,7 @@ import (
 	"unicode"
 	"xiyan.life/nup/errhandler"
 	"xiyan.life/nup/parser"
+	"xiyan.life/nup/translator/commands"
 )
 
 type IdGenerator struct {
@@ -55,7 +56,7 @@ type Translator struct {
 func NewNupListener(writer io.Writer, errorHandler *errhandler.NupErrorListener) *Translator {
 	return &Translator{
 		documentWriter: NewHtmlWriter(),
-		env:            &environment{command: Document, vars: make(map[string]interface{})},
+		env:            &environment{command: commands.Document, vars: make(map[string]interface{})},
 		writer:         writer,
 		refCounter:     NewRefCounter(),
 		idPool:         make(map[string]bool),
@@ -91,7 +92,7 @@ func (t *Translator) setAttribute(name string, value interface{}) {
 }
 
 func (t *Translator) checkRef() {
-	if t.GetCurrentCommand() == Reference {
+	if t.GetCurrentCommand() == commands.Reference {
 		if id, ok := t.getAttribute("to"); ok {
 			count := t.refCounter.addRef(id.(string))
 			t.setAttribute("refNum", count)
@@ -102,7 +103,7 @@ func (t *Translator) checkRef() {
 }
 
 func (t *Translator) checkDeref() {
-	if t.GetCurrentCommand() == Dereference {
+	if t.GetCurrentCommand() == commands.Dereference {
 		if id, ok := t.getAttribute("id"); ok {
 			count, err := t.refCounter.addDeref(id.(string))
 			if err != nil {
@@ -125,13 +126,62 @@ func (t *Translator) checkDuplicateId() {
 }
 
 func (t *Translator) checkBlockCommandConstraint() {
-	if cmd := t.GetCurrentCommand(); IsBlock(cmd) {
+	if cmd := t.GetCurrentCommand(); commands.IsBlock(cmd) {
 		if val, ok := t.currCtx.
 			GetParent().GetParent().(*parser.BlockContext).
 			GetChild(0).(*parser.ContentContext).
 			GetChild(0).(*parser.CommandContext); !(ok && val == t.currCtx) {
 			t.reportRuntimeError(fmt.Sprintf("block command \"%s\" must be the first element of a block", cmd))
 		}
+	}
+}
+
+func (t *Translator) checkCaptioned() {
+	if cmd := t.GetCurrentCommand(); commands.IsCaptioned(cmd) {
+		// by default, captioned commands are numbered
+		t.setAttribute("_caption_type", commands.GetDisplayName(cmd))
+		if numbered, ok := t.getAttribute("numbered"); (ok && numbered.(bool)) || !ok {
+			t.setAttribute("numbered", true)
+			t.sectionCounter.AddCaptionedCommand(cmd)
+			id := t.sectionCounter.GetSectionDisplayId() + "." + strconv.Itoa(t.sectionCounter.GetCaptionNum(cmd))
+			t.setAttribute("id", cmd+id)
+			t.setAttribute("_caption_num", id)
+		}
+	}
+}
+
+func (t *Translator) checkHeaders() {
+	if ctx, ok := t.currCtx.(*parser.CommandContext); ok && ctx.GetInner() != nil {
+		inner := ctx.GetInner().GetText()
+		switch ctx.GetCmd().GetText() {
+		case commands.Title:
+			t.sectionCounter.AddTitle(inner)
+		case commands.Subtitle:
+			t.sectionCounter.AddSubtitle(inner)
+		case commands.Heading:
+			t.sectionCounter.AddHeading(inner)
+		default:
+			return
+		}
+		if _, ok := t.getAttribute("id"); !ok {
+			t.setAttribute("id", "h"+t.sectionCounter.GetSectionDisplayId())
+		}
+		t.setAttribute("sectionNum", t.sectionCounter.GetSectionDisplayId())
+	}
+}
+
+func (t *Translator) checkImplicitParagraph() {
+	// if the command has only one block, the only child is a command block;
+	// otherwise, it's not.
+	if ctx, ok := t.currCtx.(*parser.CommandContext); ok && ctx.GetInner() != nil && len(ctx.AllBlock()) == 1 {
+		t.setAttribute("_command_block", true)
+	}
+}
+
+func (t *Translator) checkRecursiveCommandConstraint() {
+	// check if a block command is nested inside a non-recursive command
+	if t.env.parent != nil && !commands.IsRecursive(t.env.parent.command) && commands.IsBlock(t.GetCurrentCommand()) {
+		t.reportRuntimeError("cannot have block command inside a non-recursive command")
 	}
 }
 
@@ -214,8 +264,8 @@ func (t *Translator) EnterBlock(ctx *parser.BlockContext) {
 		// signal that the next block is no longer the child of a command
 		t.setAttribute("_command_block", false)
 		// if the child command is already a block, we don't need to wrap it in a paragraph
-	} else if c, ok := ctx.GetChild(0).GetChild(0).(*parser.CommandContext); !ok || (ok && !IsBlock(c.GetCmd().GetText())) {
-		t.pushEnv(map[string]interface{}{"_implicit_para": true}, Paragraph)
+	} else if c, ok := ctx.GetChild(0).GetChild(0).(*parser.CommandContext); !ok || (ok && !commands.IsBlock(c.GetCmd().GetText())) {
+		t.pushEnv(map[string]interface{}{"_implicit_para": true}, commands.Paragraph)
 		t.checkRecursiveCommandConstraint()
 		t.writeHTMLOpenTag()
 	}
@@ -258,7 +308,7 @@ func (t *Translator) EnterCommand(ctx *parser.CommandContext) {
 
 	// parse and check the command
 	cmd := ctx.GetCmd().GetText()
-	validAttrs, ok := GetAttrTypes(cmd)
+	validAttrs, ok := commands.GetAttrTypes(cmd)
 	if !ok {
 		t.reportRuntimeError("command \"" + cmd + "\" is undefined")
 	}
@@ -289,47 +339,13 @@ func (t *Translator) EnterCommand(ctx *parser.CommandContext) {
 
 	t.checkImplicitParagraph()
 	t.checkHeaders()
+	t.checkCaptioned()
 	t.checkRef()
 	t.checkDeref()
 	t.checkDuplicateId()
 	t.checkRecursiveCommandConstraint()
 	t.checkBlockCommandConstraint()
 	t.writeHTMLOpenTag()
-}
-
-func (t *Translator) checkHeaders() {
-	if ctx, ok := t.currCtx.(*parser.CommandContext); ok && ctx.GetInner() != nil {
-		inner := ctx.GetInner().GetText()
-		switch ctx.GetCmd().GetText() {
-		case Title:
-			t.sectionCounter.AddTitle(inner)
-		case Subtitle:
-			t.sectionCounter.AddSubtitle(inner)
-		case Heading:
-			t.sectionCounter.AddHeading(inner)
-		default:
-			return
-		}
-		if _, ok := t.getAttribute("id"); !ok {
-			t.setAttribute("id", t.sectionCounter.GetSectionId())
-		}
-		t.setAttribute("sectionNum", t.sectionCounter.GetSectionDisplayId())
-	}
-}
-
-func (t *Translator) checkImplicitParagraph() {
-	// if the command has only one block, the only child is a command block;
-	// otherwise, it's not.
-	if ctx, ok := t.currCtx.(*parser.CommandContext); ok && ctx.GetInner() != nil && len(ctx.AllBlock()) == 1 {
-		t.setAttribute("_command_block", true)
-	}
-}
-
-func (t *Translator) checkRecursiveCommandConstraint() {
-	// check if a block command is nested inside a non-recursive command
-	if t.env.parent != nil && !IsRecursive(t.env.parent.command) && IsBlock(t.GetCurrentCommand()) {
-		t.reportRuntimeError("cannot have block command inside a non-recursive command")
-	}
 }
 
 func parseAttrValue(s string) interface{} {
@@ -367,7 +383,7 @@ func (t *Translator) popEnv() {
 
 func (t *Translator) writeHTMLTag(tag bool) {
 	cmd := t.GetCurrentCommand()
-	openTag, closeTag := GetHtmlTags(cmd, t.env.vars)
+	openTag, closeTag := commands.GetHtmlTags(cmd, t.env.vars)
 	if tag {
 		_, err := t.documentWriter.WriteString(openTag)
 		if err != nil {

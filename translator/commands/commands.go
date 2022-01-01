@@ -1,10 +1,13 @@
-package translator
+package commands
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
+	"xiyan.life/nup/translator/mixins"
 )
+
+var f = fmt.Sprintf
 
 // BaseCommand is an "interface" common to all commands; it defines the most
 // common attributes that all commands must have
@@ -24,6 +27,11 @@ type BlockCommand struct{}
 
 type MathCommand struct{}
 
+type CaptionedCommand struct {
+	numbered bool
+	caption  string
+}
+
 // every element in structs that starts with an underscore is not an attribute definition,
 // but rather hold concrete information about the command; usually, they are the
 // fields with actual values
@@ -31,30 +39,6 @@ type _HtmlTarget struct {
 	htmlOpenTag  string
 	htmlCloseTag string
 }
-
-// Enum of all commands
-const (
-	Document      = "_doc"
-	Strong        = "bf"
-	Italic        = "it"
-	InlineCode    = "`"
-	InlineMath    = "$"
-	Link          = "href"
-	Reference     = "ref"
-	Dereference   = "deref"
-	Paragraph     = "para"
-	Quote         = "quote"
-	Math          = "$$"
-	Code          = "```"
-	Figure        = "figure"
-	Box           = "box"
-	Title         = "title"
-	Subtitle      = "subtitle"
-	Heading       = "heading"
-	OrderedList   = "ol"
-	UnorderedList = "ul"
-	ListItem      = "li"
-)
 
 var commands = map[string]interface{}{
 	// Document
@@ -155,26 +139,29 @@ var commands = map[string]interface{}{
 		BaseCommand
 		MathCommand
 		BlockCommand
+		CaptionedCommand
 		_HtmlTarget
 	}{
-		_HtmlTarget: _HtmlTarget{`<div{{.attrs}}>$$`, `$$</div>`},
+		_HtmlTarget: _HtmlTarget{`<div{{.attrs}} class="math-block">$$`, f(`$$%s</div>`, mixins.MathNumber)},
 	},
 	// code block
 	Code: struct {
 		BaseCommand
 		BlockCommand
+		CaptionedCommand
 		_HtmlTarget
 		lang string
 	}{
 		_HtmlTarget: _HtmlTarget{
-			htmlOpenTag:  `<pre><code{{.attrs}} class="language-{{or .lang "plain"}}">`,
-			htmlCloseTag: "</code></pre>",
+			htmlOpenTag:  `<div{{.attrs}} class="captionable"><pre><code class="language-{{or .lang "plain"}}">`,
+			htmlCloseTag: f(`</code></pre>%s</div>`, mixins.Caption),
 		},
 	},
 	// figure
 	Figure: struct {
 		BaseCommand
 		BlockCommand
+		CaptionedCommand
 		_HtmlTarget
 		src    string `html:"src"`
 		width  int    `html:"width"`
@@ -182,8 +169,7 @@ var commands = map[string]interface{}{
 		align  string `html:"data-align"`
 	}{
 		_HtmlTarget: _HtmlTarget{
-			htmlOpenTag:  "<figure><img{{.attrs}}/><figcaption>",
-			htmlCloseTag: "</figcaption></figure>",
+			htmlOpenTag: f(`<figure class="captionable"><img{{.attrs}}/>%s<figure>`, mixins.Caption),
 		},
 	},
 	// box
@@ -317,12 +303,12 @@ func embedsBaseModel(v interface{}, baseType interface{}) bool {
 
 // IsBlock returns if a command is a block
 func IsBlock(command string) bool {
-	return IsCommand(command, BlockCommand{})
+	return command == Math || IsCommand(command, BlockCommand{})
 }
 
-// IsMath returns if a command is a math command
-func IsMath(command string) bool {
-	return IsCommand(command, MathCommand{})
+// IsCaptioned returns if a command is a captioned
+func IsCaptioned(command string) bool {
+	return IsCommand(command, CaptionedCommand{})
 }
 
 func IsRecursive(command string) bool {

@@ -23,19 +23,24 @@ text}, and `inline.code()`. Even inline math like $x^2$ is supported.
 Also, you can write \ref[to="code"]{code blocks} like this:
 
 For example, you can use inline markup to write \bf{bold text}, \it{italic
-text}, and `inline.code()`. Even inline math like $x^2$ is supported.
+text}, and `inline.code()`. Even inline math like x^2 is supported.
 Also, you can write \ref[to="code"]{code blocks} like this:
 
-```[lang="cpp"]
+```[lang="cpp", caption="This is a code block; very cool isn't it?"]
 #include <iostream>
 int main() {
     std::cout << "Hello, world!" << std::endl;
 }
 ```
 
+\figure[src="https://fakeimg.pl/2000x1000/", caption="This is a caption"]{}
+\figure[src="https://fakeimg.pl/2000x1000/"]{}
+\figure[src="https://fakeimg.pl/2000x1000/"]{}
+\figure[src="https://fakeimg.pl/2000x1000/"]{}
+
 And math blocks like this:
 
-$$[id="this is a math block!"]
+$$
 x^2 + y^2 = z^2
 $$
 
